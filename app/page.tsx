@@ -373,7 +373,7 @@ export default function Home() {
           <div className="inline-block mb-4 px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
             🎯 2026 Edition
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4 pb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             2026 Bingo Card Generator
           </h1>
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-6">
