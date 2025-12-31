@@ -11,6 +11,8 @@ export interface BingoCardCustomization {
   titleColor: string;
   footerColor: string;
   cardBackgroundColor: string;
+  cellFontSize: number; // Font size multiplier (0.5 to 2.0)
+  cellBorderSize: number; // Border size in pixels (1 to 8)
 }
 
 interface BingoCardProps {
@@ -29,17 +31,26 @@ export function BingoCard({ items, customization }: BingoCardProps) {
     titleColor: "#111827",
     footerColor: "#6b7280",
     cardBackgroundColor: "transparent",
+    cellFontSize: 1.0,
+    cellBorderSize: 3,
   };
 
   const custom = { ...defaults, ...customization };
 
-  // Calculate font size based on text length - smaller on mobile
-  const getFontSize = (text: string) => {
+  // Calculate font size based on text length and user's font size multiplier
+  const getFontSize = (text: string, isMobile: boolean = false) => {
+    const baseSize = custom.cellFontSize || 1.0;
     const length = text.length;
-    if (length <= 20) return "text-[0.45rem] sm:text-[0.6rem]";
-    if (length <= 35) return "text-[0.4rem] sm:text-[0.55rem]";
-    if (length <= 50) return "text-[0.35rem] sm:text-[0.5rem]";
-    return "text-[0.3rem] sm:text-[0.45rem]";
+    let baseFontSize = 0.6; // Base size in rem
+
+    if (length <= 20) baseFontSize = 0.6;
+    else if (length <= 35) baseFontSize = 0.55;
+    else if (length <= 50) baseFontSize = 0.5;
+    else baseFontSize = 0.45;
+
+    const adjustedSize = baseFontSize * baseSize;
+    // Mobile is 75% of desktop size
+    return isMobile ? `${adjustedSize * 0.75}rem` : `${adjustedSize}rem`;
   };
 
   return (
@@ -60,44 +71,54 @@ export function BingoCard({ items, customization }: BingoCardProps) {
         </h2>
       </div>
       <div className="grid grid-cols-5 gap-1.5 sm:gap-2 max-w-md mx-auto">
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className={cn(
-              "aspect-square border-2 sm:border-[3px] rounded-md sm:rounded-lg",
-              "flex items-center justify-center text-center font-medium transition-all",
-              "overflow-hidden",
-              index === 12 ? "shadow-lg p-0" : "p-1.5 sm:p-2"
-            )}
-            style={{
-              backgroundColor:
-                index === 12
-                  ? custom.freeCellBackgroundColor
-                  : custom.cellBackgroundColor,
-              borderColor: custom.cellBorderColor,
-            }}
-          >
-            {index === 12 ? (
-              <span
-                className="text-xl sm:text-2xl font-bold w-full h-full flex items-center justify-center"
-                style={{ color: custom.freeCellTextColor }}
-              >
-                {item}
-              </span>
-            ) : (
-              <span
-                className={cn(
-                  "break-words leading-[1.25] w-full",
-                  "px-0.5",
-                  getFontSize(item)
-                )}
-                style={{ color: custom.cellTextColor }}
-              >
-                {item}
-              </span>
-            )}
-          </div>
-        ))}
+        {items.map((item, index) => {
+          const borderSize = custom.cellBorderSize || 3;
+          return (
+            <div
+              key={index}
+              className={cn(
+                "aspect-square rounded-md sm:rounded-lg",
+                "flex items-center justify-center text-center font-medium transition-all",
+                "overflow-hidden",
+                index === 12 ? "shadow-lg p-0" : "p-1.5 sm:p-2"
+              )}
+              style={{
+                backgroundColor:
+                  index === 12
+                    ? custom.freeCellBackgroundColor
+                    : custom.cellBackgroundColor,
+                borderColor: custom.cellBorderColor,
+                borderWidth: `${borderSize}px`,
+                borderStyle: "solid",
+              }}
+            >
+              {index === 12 ? (
+                <span
+                  className="font-bold w-full h-full flex items-center justify-center text-[1rem] sm:text-[1.25rem]"
+                  style={{
+                    color: custom.freeCellTextColor,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item}
+                </span>
+              ) : (
+                <span
+                  className={cn("leading-[1.25] w-full", "px-0.5")}
+                  style={{
+                    color: custom.cellTextColor,
+                    fontSize: getFontSize(item, false),
+                    wordBreak: "normal",
+                    overflowWrap: "normal",
+                    hyphens: "none",
+                  }}
+                >
+                  {item}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
       <div
         className="mt-4 text-center text-xs sm:text-sm"
