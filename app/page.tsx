@@ -865,8 +865,8 @@ export default function Home() {
                   </Button>
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  {Click "Randomize" to shuffle the items, or "Print Card" to
-                  print}
+                  Click &ldquo;Randomize&rdquo; to shuffle the items, or
+                  &ldquo;Print Card&rdquo; to print
                 </p>
               </CardContent>
             </Card>
