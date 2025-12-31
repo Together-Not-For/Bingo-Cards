@@ -98,19 +98,25 @@ export function BingoCard({ items, customization }: BingoCardProps) {
                   style={{
                     color: custom.freeCellTextColor,
                     whiteSpace: "nowrap",
+                    lineHeight: "1",
                   }}
                 >
                   {item}
                 </span>
               ) : (
                 <span
-                  className={cn("leading-[1.25] w-full", "px-0.5")}
+                  className={cn(
+                    "w-full h-full flex items-center justify-center",
+                    "px-0.5"
+                  )}
                   style={{
                     color: custom.cellTextColor,
                     fontSize: getFontSize(item, false),
                     wordBreak: "normal",
                     overflowWrap: "normal",
                     hyphens: "none",
+                    lineHeight: "1.2",
+                    textAlign: "center",
                   }}
                 >
                   {item}

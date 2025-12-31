@@ -41,6 +41,7 @@ export default function Home() {
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const presets = {
     classic: {
@@ -538,7 +539,10 @@ export default function Home() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-inner w-full overflow-auto">
-                    <div className="min-w-[280px] max-w-full mx-auto">
+                    <div
+                      ref={cardRef}
+                      className="min-w-[280px] max-w-full mx-auto"
+                    >
                       <BingoCard
                         items={bingoCard}
                         customization={customization}
@@ -561,6 +565,17 @@ export default function Home() {
                       <Printer className="h-4 w-4 mr-2" />
                       Print Card
                     </Button>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-blue-800 font-medium mb-1">
+                      📸 To Save as Image:
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Take a screenshot of the bingo card above using your
+                      system&rsquo;s screenshot tool (e.g., Cmd+Shift+4 on Mac,
+                      Windows+Shift+S on Windows, or use your browser&rsquo;s
+                      developer tools).
+                    </p>
                   </div>
                   <p className="text-xs text-center text-muted-foreground mt-2">
                     Click &ldquo;Randomize&rdquo; to shuffle the items, or
