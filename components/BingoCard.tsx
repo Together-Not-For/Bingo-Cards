@@ -70,7 +70,7 @@ export function BingoCard({ items, customization }: BingoCardProps) {
           2026 BINGO
         </h2>
       </div>
-      <div className="grid grid-cols-5 gap-1.5 sm:gap-2 max-w-md mx-auto">
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2 max-w-md mx-auto px-4">
         {items.map((item, index) => {
           const borderSize = custom.cellBorderSize || 3;
           return (
