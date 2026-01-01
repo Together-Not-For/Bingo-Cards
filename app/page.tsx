@@ -2,6 +2,7 @@
 
 import { BingoCard, BingoCardCustomization } from "@/components/BingoCard";
 import Footer from "@/components/common/Footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BINGO_ITEMS_2026 } from "@/lib/bingoItems2026";
+import { THEMED_ITEMS, THEME_LABELS, type Theme } from "@/lib/bingoItemsThemed";
 import { cn } from "@/lib/utils";
 import {
   Palette,
@@ -40,6 +41,7 @@ export default function Home() {
     cellBorderSize: 3,
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<Theme>("basic");
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -154,10 +156,11 @@ export default function Home() {
     const itemsNeeded = Math.max(0, 24 - items.length);
     if (itemsNeeded === 0) return;
 
+    // Get items based on selected theme
+    const sourceItems = THEMED_ITEMS[selectedTheme];
+
     // Get items that aren't already in the list
-    const availableItems = BINGO_ITEMS_2026.filter(
-      (item) => !items.includes(item)
-    );
+    const availableItems = sourceItems.filter((item) => !items.includes(item));
 
     // Shuffle and take the needed amount (but don't exceed 24 total)
     const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
@@ -394,28 +397,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Landing Page Hero Section */}
       <div className="container mx-auto px-4 py-8 md:py-10">
+        <div className="flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
         <div className="text-center mb-6">
-          <div className="inline-block mb-4 px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+          <div className="inline-block mb-4 px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-semibold">
             🎯 2026 Edition
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4 pb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4 pb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
             2026 Bingo Card Generator
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-4">
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
             Create custom, printable bingo cards for 2026. Add your items,
             generate your card, and start playing!
           </p>
-          <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500">
-            <span className="px-3 py-1 bg-white rounded-full shadow-sm">
+          <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm">
               ✨ Custom Items
             </span>
-            <span className="px-3 py-1 bg-white rounded-full shadow-sm">
+            <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm">
               🎲 Randomize
             </span>
-            <span className="px-3 py-1 bg-white rounded-full shadow-sm">
+            <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm">
               🖨️ Print Ready
             </span>
           </div>
@@ -458,7 +464,7 @@ export default function Home() {
                   items.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
                       <span className="text-sm font-medium">{item}</span>
                       <Button
@@ -502,19 +508,42 @@ export default function Home() {
                   )}
                 </div>
                 {items.length < 24 && (
-                  <Button
-                    onClick={autoFillItems}
-                    variant="outline"
-                    className="w-full mb-2"
-                    size="lg"
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Auto-fill {24 - items.length} item
-                    {24 - items.length === 1 ? "" : "s"} from 2026 list
-                  </Button>
+                  <div className="space-y-3 mb-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Choose a theme for auto-fill:
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {(Object.keys(THEME_LABELS) as Theme[]).map((theme) => (
+                          <Button
+                            key={theme}
+                            variant={
+                              selectedTheme === theme ? "default" : "outline"
+                            }
+                            onClick={() => setSelectedTheme(theme)}
+                            className="h-auto py-2 px-3 text-xs capitalize"
+                            size="sm"
+                          >
+                            {THEME_LABELS[theme]}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={autoFillItems}
+                      variant="outline"
+                      className="w-full"
+                      size="lg"
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Auto-fill {24 - items.length} item
+                      {24 - items.length === 1 ? "" : "s"} from{" "}
+                      {THEME_LABELS[selectedTheme].toLowerCase()}
+                    </Button>
+                  </div>
                 )}
                 {items.length >= 24 && (
-                  <p className="text-sm text-green-600 font-medium text-center mb-2">
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium text-center mb-4">
                     ✓ You have exactly 24 items!
                   </p>
                 )}
@@ -555,7 +584,7 @@ export default function Home() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-inner w-full overflow-auto">
+                  <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-inner w-full overflow-auto">
                     <div
                       ref={cardRef}
                       className="min-w-[280px] max-w-full mx-auto"
@@ -583,11 +612,11 @@ export default function Home() {
                       Print Card
                     </Button>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                    <p className="text-xs text-blue-800 font-medium mb-1">
+                  <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
+                    <p className="text-xs text-blue-800 dark:text-blue-200 font-medium mb-1">
                       📸 To Save as Image:
                     </p>
-                    <p className="text-xs text-blue-700">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
                       Take a screenshot of the bingo card above using your
                       system&rsquo;s screenshot tool (e.g., Cmd+Shift+4 on Mac,
                       Windows+Shift+S on Windows, or use your browser&rsquo;s
