@@ -770,9 +770,9 @@ export default function Home() {
                               ⚠️ Warning: Spicy Theme Contains Sexual Content
                             </p>
                             <p className="text-xs text-orange-700 dark:text-orange-300">
-                              The "Spicy" theme includes adult/sexual content.
-                              Only select this theme if you are comfortable with
-                              mature content.
+                              The &quot;Spicy&quot; theme includes adult/sexual
+                              content. Only select this theme if you are
+                              comfortable with mature content.
                             </p>
                           </div>
                         </div>
