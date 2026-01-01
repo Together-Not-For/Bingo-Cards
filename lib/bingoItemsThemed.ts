@@ -1,4 +1,11 @@
-export type Theme = "basic" | "goals" | "regrets" | "ideas" | "innovations" | "hobbies" | "mindset";
+export type Theme =
+  | "basic"
+  | "goals"
+  | "regrets"
+  | "ideas"
+  | "innovations"
+  | "hobbies"
+  | "mindset";
 
 export const THEMED_ITEMS: Record<Theme, string[]> = {
   basic: [
@@ -377,4 +384,3 @@ export const THEME_LABELS: Record<Theme, string> = {
   hobbies: "Hobbies",
   mindset: "Mindset",
 };
-

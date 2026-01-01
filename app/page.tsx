@@ -24,8 +24,13 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 
+type BingoItem = {
+  text: string;
+  isAutoFilled: boolean;
+};
+
 export default function Home() {
-  const [items, setItems] = useState<string[]>([]);
+  const [items, setItems] = useState<BingoItem[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [bingoCard, setBingoCard] = useState<string[] | null>(null);
   const [customization, setCustomization] = useState<BingoCardCustomization>({
@@ -142,8 +147,9 @@ export default function Home() {
     if (items.length >= 24) {
       return; // Don't allow adding more than 24 items
     }
-    if (inputValue.trim() && !items.includes(inputValue.trim())) {
-      setItems([...items, inputValue.trim()]);
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue && !items.some((item) => item.text === trimmedValue)) {
+      setItems([...items, { text: trimmedValue, isAutoFilled: false }]);
       setInputValue("");
     }
   };
@@ -166,8 +172,9 @@ export default function Home() {
 
     selectedThemes.forEach((theme, themeIndex) => {
       // Get items from this theme that aren't already in the list
+      const existingTexts = items.map((item) => item.text);
       const themeItems = THEMED_ITEMS[theme].filter(
-        (item) => !items.includes(item)
+        (item) => !existingTexts.includes(item)
       );
 
       // Shuffle this theme's items
@@ -185,7 +192,13 @@ export default function Home() {
     // Shuffle the final combined list to mix themes together
     const finalShuffled = [...newItems].sort(() => Math.random() - 0.5);
 
-    setItems([...items, ...finalShuffled]);
+    // Convert to BingoItem format with isAutoFilled: true
+    const autoFilledItems: BingoItem[] = finalShuffled.map((text) => ({
+      text,
+      isAutoFilled: true,
+    }));
+
+    setItems([...items, ...autoFilledItems]);
   };
 
   const generateBingoCard = () => {
@@ -209,7 +222,7 @@ export default function Home() {
         // Center square is FREE
         grid.push("FREE");
       } else {
-        grid.push(selected[itemIndex++]);
+        grid.push(selected[itemIndex++].text);
       }
     }
 
@@ -485,7 +498,15 @@ export default function Home() {
                       key={index}
                       className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <span className="text-sm font-medium">{item}</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm font-medium">{item.text}</span>
+                        {item.isAutoFilled && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Auto-filled
+                          </span>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
