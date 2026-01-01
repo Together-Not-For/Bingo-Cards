@@ -41,7 +41,7 @@ export default function Home() {
     cellBorderSize: 3,
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState<Theme>("basic");
+  const [selectedThemes, setSelectedThemes] = useState<Theme[]>(["basic"]);
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -156,17 +156,36 @@ export default function Home() {
     const itemsNeeded = Math.max(0, 24 - items.length);
     if (itemsNeeded === 0) return;
 
-    // Get items based on selected theme
-    const sourceItems = THEMED_ITEMS[selectedTheme];
+    // Calculate items per theme (evenly distributed)
+    const numThemes = selectedThemes.length;
+    const itemsPerTheme = Math.floor(itemsNeeded / numThemes);
+    const remainder = itemsNeeded % numThemes;
 
-    // Get items that aren't already in the list
-    const availableItems = sourceItems.filter((item) => !items.includes(item));
+    // Collect items from each theme evenly
+    const newItems: string[] = [];
 
-    // Shuffle and take the needed amount (but don't exceed 24 total)
-    const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
-    const newItems = shuffled.slice(0, itemsNeeded);
+    selectedThemes.forEach((theme, themeIndex) => {
+      // Get items from this theme that aren't already in the list
+      const themeItems = THEMED_ITEMS[theme].filter(
+        (item) => !items.includes(item)
+      );
 
-    setItems([...items, ...newItems]);
+      // Shuffle this theme's items
+      const shuffled = [...themeItems].sort(() => Math.random() - 0.5);
+
+      // Calculate how many to take from this theme
+      // Distribute remainder items across first few themes
+      const takeFromThisTheme =
+        itemsPerTheme + (themeIndex < remainder ? 1 : 0);
+
+      // Take the calculated amount
+      newItems.push(...shuffled.slice(0, takeFromThisTheme));
+    });
+
+    // Shuffle the final combined list to mix themes together
+    const finalShuffled = [...newItems].sort(() => Math.random() - 0.5);
+
+    setItems([...items, ...finalShuffled]);
   };
 
   const generateBingoCard = () => {
@@ -510,23 +529,54 @@ export default function Home() {
                 {items.length < 24 && (
                   <div className="space-y-3 mb-4">
                     <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        Choose a theme for auto-fill:
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {(Object.keys(THEME_LABELS) as Theme[]).map((theme) => (
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium">
+                          Choose theme(s) for auto-fill:
+                        </label>
+                        {selectedThemes.length <
+                          (Object.keys(THEME_LABELS) as Theme[]).length && (
                           <Button
-                            key={theme}
-                            variant={
-                              selectedTheme === theme ? "default" : "outline"
-                            }
-                            onClick={() => setSelectedTheme(theme)}
-                            className="h-auto py-2 px-3 text-xs capitalize"
+                            variant="ghost"
                             size="sm"
+                            onClick={() =>
+                              setSelectedThemes(
+                                Object.keys(THEME_LABELS) as Theme[]
+                              )
+                            }
+                            className="text-xs h-auto py-1 px-2"
                           >
-                            {THEME_LABELS[theme]}
+                            Select All
                           </Button>
-                        ))}
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(Object.keys(THEME_LABELS) as Theme[]).map((theme) => {
+                          const isSelected = selectedThemes.includes(theme);
+                          return (
+                            <Button
+                              key={theme}
+                              variant={isSelected ? "default" : "outline"}
+                              onClick={() => {
+                                if (isSelected) {
+                                  // Deselect if already selected (but keep at least one)
+                                  if (selectedThemes.length > 1) {
+                                    setSelectedThemes(
+                                      selectedThemes.filter((t) => t !== theme)
+                                    );
+                                  }
+                                } else {
+                                  // Add to selection
+                                  setSelectedThemes([...selectedThemes, theme]);
+                                }
+                              }}
+                              className="h-auto py-2 px-3 text-xs capitalize"
+                              size="sm"
+                            >
+                              {isSelected && "✓ "}
+                              {THEME_LABELS[theme]}
+                            </Button>
+                          );
+                        })}
                       </div>
                     </div>
                     <Button
@@ -538,7 +588,9 @@ export default function Home() {
                       <Sparkles className="h-4 w-4 mr-2" />
                       Auto-fill {24 - items.length} item
                       {24 - items.length === 1 ? "" : "s"} from{" "}
-                      {THEME_LABELS[selectedTheme].toLowerCase()}
+                      {selectedThemes.length === 1
+                        ? THEME_LABELS[selectedThemes[0]].toLowerCase()
+                        : `${selectedThemes.length} themes`}
                     </Button>
                   </div>
                 )}
