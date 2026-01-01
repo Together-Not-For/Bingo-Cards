@@ -643,7 +643,10 @@ export default function Home() {
                     >
                       <BingoCard
                         items={bingoCard}
-                        customization={customization}
+                        customization={{
+                          ...customization,
+                          cellFontSize: customization.cellFontSize * 0.75, // Reduce font size by 25% for preview
+                        }}
                       />
                     </div>
                   </div>
