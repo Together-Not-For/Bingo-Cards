@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { THEMED_ITEMS, THEME_LABELS, type Theme } from "@/lib/bingoItemsThemed";
 import { cn } from "@/lib/utils";
 import {
+  AlertTriangle,
   Palette,
   Plus,
   Printer,
@@ -49,6 +50,41 @@ export default function Home() {
   const [selectedThemes, setSelectedThemes] = useState<Theme[]>(["basic"]);
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Function to generate random color
+  const randomColor = () => {
+    return (
+      "#" +
+      Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, "0")
+    );
+  };
+
+  // Function to generate random preset colors
+  const generateRandomPreset = () => {
+    const cellBg = randomColor();
+    const cellText = randomColor();
+    const cellBorder = randomColor();
+    const freeBg = randomColor();
+    const freeText = randomColor();
+    const title = randomColor();
+    const footer = randomColor();
+    const cardBg = randomColor();
+
+    return {
+      cellBackgroundColor: cellBg,
+      cellTextColor: cellText,
+      cellBorderColor: cellBorder,
+      freeCellBackgroundColor: freeBg,
+      freeCellTextColor: freeText,
+      titleColor: title,
+      footerColor: footer,
+      cardBackgroundColor: cardBg,
+      cellFontSize: 1.0,
+      cellBorderSize: 3,
+    };
+  };
 
   const presets = {
     classic: {
@@ -137,6 +173,22 @@ export default function Home() {
         titleColor: "#15803d",
         footerColor: "#4ade80",
         cardBackgroundColor: "#f0fdf4",
+        cellFontSize: 1.0,
+        cellBorderSize: 3,
+      },
+    },
+    random: {
+      name: "Random",
+      colors: {
+        // Placeholder colors for display - will be regenerated on click
+        cellBackgroundColor: "#ff6b6b",
+        cellTextColor: "#333333",
+        cellBorderColor: "#4ecdc4",
+        freeCellBackgroundColor: "#45b7d1",
+        freeCellTextColor: "#ffffff",
+        titleColor: "#96ceb4",
+        footerColor: "#ffeaa7",
+        cardBackgroundColor: "#dfe6e9",
         cellFontSize: 1.0,
         cellBorderSize: 3,
       },
@@ -600,6 +652,23 @@ export default function Home() {
                         })}
                       </div>
                     </div>
+                    {selectedThemes.includes("spicy") && (
+                      <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-orange-800 dark:text-orange-200 mb-1">
+                              ⚠️ Warning: Spicy Theme Contains Sexual Content
+                            </p>
+                            <p className="text-xs text-orange-700 dark:text-orange-300">
+                              The "Spicy" theme includes adult/sexual content.
+                              Only select this theme if you are comfortable with
+                              mature content.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <Button
                       onClick={autoFillItems}
                       variant="outline"
@@ -728,24 +797,62 @@ export default function Home() {
                           key={key}
                           variant="outline"
                           onClick={() => {
-                            setCustomization(preset.colors);
+                            if (key === "random") {
+                              // Generate new random colors each time
+                              setCustomization(generateRandomPreset());
+                            } else {
+                              setCustomization(preset.colors);
+                            }
                           }}
                           className="h-auto py-2 lg:py-3 flex flex-col items-center gap-0.5 lg:gap-1"
                         >
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 items-center justify-center">
                             <div
-                              className="w-4 h-4 rounded"
+                              className="w-4 h-4 rounded flex-shrink-0 border"
                               style={{
                                 backgroundColor:
                                   preset.colors.cellBackgroundColor,
-                                border: `1px solid ${preset.colors.cellBorderColor}`,
+                                borderColor:
+                                  preset.colors.cellBackgroundColor ===
+                                    "#ffffff" ||
+                                  preset.colors.cellBackgroundColor ===
+                                    "#fef3c7" ||
+                                  preset.colors.cellBackgroundColor ===
+                                    "#e0f2fe" ||
+                                  preset.colors.cellBackgroundColor ===
+                                    "#dcfce7" ||
+                                  preset.colors.cellBackgroundColor ===
+                                    "#fee2e2"
+                                    ? "#e5e7eb"
+                                    : preset.colors.cellBorderColor,
+                                width: "16px",
+                                height: "16px",
+                                minWidth: "16px",
+                                minHeight: "16px",
                               }}
                             />
                             <div
-                              className="w-4 h-4 rounded"
+                              className="w-4 h-4 rounded flex-shrink-0 border"
                               style={{
                                 backgroundColor:
                                   preset.colors.freeCellBackgroundColor,
+                                borderColor:
+                                  preset.colors.freeCellBackgroundColor ===
+                                    "#ffffff" ||
+                                  preset.colors.freeCellBackgroundColor ===
+                                    "#fef3c7" ||
+                                  preset.colors.freeCellBackgroundColor ===
+                                    "#e0f2fe" ||
+                                  preset.colors.freeCellBackgroundColor ===
+                                    "#dcfce7" ||
+                                  preset.colors.freeCellBackgroundColor ===
+                                    "#fee2e2"
+                                    ? "#e5e7eb"
+                                    : preset.colors.freeCellBackgroundColor,
+                                width: "16px",
+                                height: "16px",
+                                minWidth: "16px",
+                                minHeight: "16px",
                               }}
                             />
                           </div>

@@ -5,7 +5,8 @@ export type Theme =
   | "ideas"
   | "innovations"
   | "hobbies"
-  | "mindset";
+  | "mindset"
+  | "spicy";
 
 export const THEMED_ITEMS: Record<Theme, string[]> = {
   basic: [
@@ -373,6 +374,48 @@ export const THEMED_ITEMS: Record<Theme, string[]> = {
     "Practice being present",
     "Embrace uncertainty with courage",
   ],
+  spicy: [
+    "Tried a new position",
+    "Had sex in a new location",
+    "Bought new lingerie",
+    "Watched adult content together",
+    "Tried roleplay",
+    "Used a sex toy",
+    "Had morning sex",
+    "Had shower sex",
+    "Sent a sexy text",
+    "Received a sexy text",
+    "Tried a new kink",
+    "Gave oral sex",
+    "Received oral sex",
+    "Had sex without a condom (if safe)",
+    "Tried anal sex",
+    "Had sex in public (safely)",
+    "Took sexy photos",
+    "Had a threesome",
+    "Went to a sex shop",
+    "Read erotica",
+    "Tried BDSM",
+    "Had sex in a car",
+    "Tried edging",
+    "Had sex multiple times in one day",
+    "Tried a new sex position",
+    "Had sex in the kitchen",
+    "Tried phone sex",
+    "Had sex in the shower",
+    "Tried a new lubricant",
+    "Had sex in the morning",
+    "Tried a new sex toy",
+    "Had sex in a hotel",
+    "Tried a new fetish",
+    "Had sex in the living room",
+    "Tried a new technique",
+    "Had sex in the bedroom",
+    "Tried a new fantasy",
+    "Had sex in the bathroom",
+    "Tried a new way to orgasm",
+    "Had sex in a new way",
+  ],
 };
 
 export const THEME_LABELS: Record<Theme, string> = {
@@ -383,4 +426,5 @@ export const THEME_LABELS: Record<Theme, string> = {
   innovations: "Innovations",
   hobbies: "Hobbies",
   mindset: "Mindset",
+  spicy: "Spicy",
 };
