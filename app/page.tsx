@@ -51,26 +51,135 @@ export default function Home() {
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Function to generate random color
-  const randomColor = () => {
-    return (
-      "#" +
-      Math.floor(Math.random() * 16777215)
-        .toString(16)
-        .padStart(6, "0")
-    );
+  // Helper function to convert HSL to RGB
+  const hslToRgb = (h: number, s: number, l: number): string => {
+    h /= 360;
+    s /= 100;
+    l /= 100;
+
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1 / 3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1 / 3);
+    }
+
+    const toHex = (c: number) => {
+      const hex = Math.round(c * 255).toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    };
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   };
 
-  // Function to generate random preset colors
+  // Helper function to calculate relative luminance
+  const getLuminance = (hex: string): number => {
+    const rgb =
+      hex.match(/[A-Za-z0-9]{2}/g)?.map((v) => parseInt(v, 16) / 255) || [];
+    const [r, g, b] = rgb.map((val) => {
+      return val <= 0.03928
+        ? val / 12.92
+        : Math.pow((val + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+
+  // Helper function to calculate contrast ratio
+  const getContrastRatio = (color1: string, color2: string): number => {
+    const lum1 = getLuminance(color1);
+    const lum2 = getLuminance(color2);
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+    return (lighter + 0.05) / (darker + 0.05);
+  };
+
+  // Function to generate random preset colors with proper contrast
   const generateRandomPreset = () => {
-    const cellBg = randomColor();
-    const cellText = randomColor();
-    const cellBorder = randomColor();
-    const freeBg = randomColor();
-    const freeText = randomColor();
-    const title = randomColor();
-    const footer = randomColor();
-    const cardBg = randomColor();
+    // Pick a random base hue (0-360)
+    const baseHue = Math.floor(Math.random() * 360);
+
+    // Generate a cohesive color scheme using the same hue family
+    // Cell background: light tint (high lightness, low saturation)
+    const cellBg = hslToRgb(
+      baseHue,
+      20 + Math.random() * 30,
+      85 + Math.random() * 10
+    );
+
+    // Cell text: dark version of same hue for good contrast
+    let cellText = hslToRgb(
+      baseHue,
+      60 + Math.random() * 30,
+      15 + Math.random() * 10
+    );
+
+    // Ensure minimum contrast ratio of 4.5:1 (WCAG AA standard)
+    let contrast = getContrastRatio(cellBg, cellText);
+    if (contrast < 4.5) {
+      // Adjust text to be darker if contrast is too low
+      cellText = hslToRgb(baseHue, 70, 10);
+    }
+
+    // Cell border: medium saturation, medium lightness
+    const cellBorder = hslToRgb(
+      baseHue,
+      50 + Math.random() * 30,
+      40 + Math.random() * 20
+    );
+
+    // Free cell background: complementary or analogous hue, vibrant
+    const freeHue = (baseHue + 180 + (Math.random() * 60 - 30)) % 360; // Complementary with variation
+    const freeBg = hslToRgb(
+      freeHue,
+      70 + Math.random() * 25,
+      45 + Math.random() * 15
+    );
+
+    // Free cell text: white or very light for contrast
+    let freeText = "#ffffff";
+    if (getContrastRatio(freeBg, freeText) < 4.5) {
+      // If background is too light, use dark text
+      const freeTextDark = hslToRgb(freeHue, 70, 20);
+      if (
+        getContrastRatio(freeBg, freeTextDark) >
+        getContrastRatio(freeBg, freeText)
+      ) {
+        freeText = freeTextDark;
+      }
+    }
+
+    // Title: darker version of base hue
+    const title = hslToRgb(
+      baseHue,
+      60 + Math.random() * 30,
+      25 + Math.random() * 15
+    );
+
+    // Footer: muted version of base hue
+    const footer = hslToRgb(
+      baseHue,
+      30 + Math.random() * 20,
+      50 + Math.random() * 20
+    );
+
+    // Card background: very light tint or transparent
+    const cardBg =
+      Math.random() > 0.5
+        ? "transparent"
+        : hslToRgb(baseHue, 10 + Math.random() * 10, 95 + Math.random() * 5);
 
     return {
       cellBackgroundColor: cellBg,
