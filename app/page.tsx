@@ -137,6 +137,9 @@ export default function Home() {
   };
 
   const addItem = () => {
+    if (items.length >= 24) {
+      return; // Don't allow adding more than 24 items
+    }
     if (inputValue.trim() && !items.includes(inputValue.trim())) {
       setItems([...items, inputValue.trim()]);
       setInputValue("");
@@ -156,7 +159,7 @@ export default function Home() {
       (item) => !items.includes(item)
     );
 
-    // Shuffle and take the needed amount
+    // Shuffle and take the needed amount (but don't exceed 24 total)
     const shuffled = [...availableItems].sort(() => Math.random() - 0.5);
     const newItems = shuffled.slice(0, itemsNeeded);
 
@@ -164,16 +167,16 @@ export default function Home() {
   };
 
   const generateBingoCard = () => {
-    if (items.length < 24) {
+    if (items.length !== 24) {
       alert(
-        "Please add at least 24 items to create a bingo card (5x5 grid with FREE space in center)"
+        "Please add exactly 24 items to create a bingo card (5x5 grid with FREE space in center)"
       );
       return;
     }
 
-    // Shuffle items and take 24 (for 5x5 grid with FREE in center)
+    // Shuffle items (we already have exactly 24)
     const shuffled = [...items].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 24);
+    const selected = shuffled;
 
     // Create 5x5 grid with FREE in center
     const grid: string[] = [];
@@ -200,7 +203,7 @@ export default function Home() {
   };
 
   const randomizeCard = () => {
-    if (items.length < 24) return;
+    if (items.length !== 24) return;
     generateBingoCard();
   };
 
@@ -424,7 +427,7 @@ export default function Home() {
             <CardHeader>
               <CardTitle className="text-2xl">Manage Your Items</CardTitle>
               <CardDescription>
-                Add at least 24 items to create your bingo card
+                Add exactly 24 items to create your bingo card
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -435,8 +438,13 @@ export default function Home() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addItem()}
                   className="flex-1"
+                  disabled={items.length >= 24}
                 />
-                <Button onClick={addItem} size="icon">
+                <Button
+                  onClick={addItem}
+                  size="icon"
+                  disabled={items.length >= 24}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -473,12 +481,12 @@ export default function Home() {
                     <span
                       className={cn(
                         "font-semibold",
-                        items.length >= 24
+                        items.length === 24
                           ? "text-green-600"
                           : "text-orange-600"
                       )}
                     >
-                      {items.length} / 24+ (minimum)
+                      {items.length} / 24
                     </span>
                   </p>
                   {items.length > 0 && (
@@ -505,12 +513,17 @@ export default function Home() {
                     {24 - items.length === 1 ? "" : "s"} from 2026 list
                   </Button>
                 )}
+                {items.length >= 24 && (
+                  <p className="text-sm text-green-600 font-medium text-center mb-2">
+                    ✓ You have exactly 24 items!
+                  </p>
+                )}
                 <Button
                   onClick={generateBingoCard}
-                  disabled={items.length < 24}
+                  disabled={items.length !== 24}
                   className={cn(
                     "w-full text-lg font-bold shadow-lg transition-all",
-                    items.length >= 24
+                    items.length === 24
                       ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-14"
                       : "h-12"
                   )}
@@ -519,6 +532,10 @@ export default function Home() {
                   {items.length < 24
                     ? `Add ${24 - items.length} more item${
                         24 - items.length === 1 ? "" : "s"
+                      } to generate`
+                    : items.length > 24
+                    ? `Remove ${items.length - 24} item${
+                        items.length - 24 === 1 ? "" : "s"
                       } to generate`
                     : "🎯 Generate Bingo Card"}
                 </Button>
