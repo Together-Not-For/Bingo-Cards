@@ -1,6 +1,7 @@
 "use client";
 
 import { BingoCard, BingoCardCustomization } from "@/components/BingoCard";
+import { BingoPoolSignup } from "@/components/BingoPoolSignup";
 import Footer from "@/components/common/Footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -1392,6 +1393,9 @@ export default function Home() {
               </Card>
             </div>
           )}
+
+          {/* Bingo Pool Signup Section */}
+          <BingoPoolSignup />
         </div>
       </div>
       {/* 18+ Age Gate Dialog */}
