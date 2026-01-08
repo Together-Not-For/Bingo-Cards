@@ -11,8 +11,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { THEMED_ITEMS, THEME_LABELS, type Theme } from "@/lib/bingoItemsThemed";
+import {
+  SELECTABLE_THEMES,
+  THEMED_ITEMS,
+  THEME_LABELS,
+  type Theme,
+} from "@/lib/bingoItemsThemed";
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
@@ -23,7 +36,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type BingoItem = {
   text: string;
@@ -48,8 +61,21 @@ export default function Home() {
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedThemes, setSelectedThemes] = useState<Theme[]>(["basic"]);
+  const [spicyLevel, setSpicyLevel] = useState<1 | 2 | 3>(1);
+  const [showAgeGate, setShowAgeGate] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  const [pendingSpicySelection, setPendingSpicySelection] = useState(false);
+  const [wasSelectingAll, setWasSelectingAll] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Check localStorage for age verification on mount
+  useEffect(() => {
+    const verified = localStorage.getItem("spicy_age_verified");
+    if (verified === "true") {
+      setIsAgeVerified(true);
+    }
+  }, []);
 
   // Helper function to convert HSL to RGB
   const hslToRgb = (h: number, s: number, l: number): string => {
@@ -334,9 +360,20 @@ export default function Home() {
     selectedThemes.forEach((theme, themeIndex) => {
       // Get items from this theme that aren't already in the list
       const existingTexts = items.map((item) => item.text);
-      const themeItems = THEMED_ITEMS[theme].filter(
-        (item) => !existingTexts.includes(item)
-      );
+
+      // Handle spicy theme - use the selected level
+      let themeItems: string[];
+      if (theme === "spicy") {
+        const spicyThemeKey =
+          spicyLevel === 1 ? "spicy" : spicyLevel === 2 ? "spicy2" : "spicy3";
+        themeItems = THEMED_ITEMS[spicyThemeKey as Theme].filter(
+          (item) => !existingTexts.includes(item)
+        );
+      } else {
+        themeItems = THEMED_ITEMS[theme].filter(
+          (item) => !existingTexts.includes(item)
+        );
+      }
 
       // Shuffle this theme's items
       const shuffled = [...themeItems].sort(() => Math.random() - 0.5);
@@ -715,16 +752,23 @@ export default function Home() {
                         <label className="text-sm font-medium">
                           Choose theme(s) for auto-fill:
                         </label>
-                        {selectedThemes.length <
-                          (Object.keys(THEME_LABELS) as Theme[]).length && (
+                        {selectedThemes.length < SELECTABLE_THEMES.length && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() =>
-                              setSelectedThemes(
-                                Object.keys(THEME_LABELS) as Theme[]
-                              )
-                            }
+                            onClick={() => {
+                              // Check if spicy is in the themes to select and user isn't verified
+                              const willSelectSpicy =
+                                SELECTABLE_THEMES.includes("spicy") &&
+                                !selectedThemes.includes("spicy");
+                              if (willSelectSpicy && !isAgeVerified) {
+                                setPendingSpicySelection(true);
+                                setWasSelectingAll(true);
+                                setShowAgeGate(true);
+                              } else {
+                                setSelectedThemes([...SELECTABLE_THEMES]);
+                              }
+                            }}
                             className="text-xs h-auto py-1 px-2"
                           >
                             Select All
@@ -732,7 +776,7 @@ export default function Home() {
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {(Object.keys(THEME_LABELS) as Theme[]).map((theme) => {
+                        {SELECTABLE_THEMES.map((theme) => {
                           const isSelected = selectedThemes.includes(theme);
                           return (
                             <Button
@@ -747,6 +791,14 @@ export default function Home() {
                                     );
                                   }
                                 } else {
+                                  // Check if trying to select spicy theme
+                                  if (theme === "spicy") {
+                                    if (!isAgeVerified) {
+                                      setPendingSpicySelection(true);
+                                      setShowAgeGate(true);
+                                      return;
+                                    }
+                                  }
                                   // Add to selection
                                   setSelectedThemes([...selectedThemes, theme]);
                                 }
@@ -762,17 +814,50 @@ export default function Home() {
                       </div>
                     </div>
                     {selectedThemes.includes("spicy") && (
-                      <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-3">
-                        <div className="flex items-start gap-2">
-                          <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                          <div className="flex items-start gap-2 mb-3">
+                            <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-semibold text-orange-800 dark:text-orange-200 mb-1">
+                                ⚠️ Warning: Spicy Theme Contains Sexual Content
+                              </p>
+                              <p className="text-xs text-orange-700 dark:text-orange-300">
+                                The Spicy theme includes adult/sexual content.
+                                Only select this theme if you are comfortable
+                                with mature content.
+                              </p>
+                            </div>
+                          </div>
                           <div>
-                            <p className="text-sm font-semibold text-orange-800 dark:text-orange-200 mb-1">
-                              ⚠️ Warning: Spicy Theme Contains Sexual Content
-                            </p>
-                            <p className="text-xs text-orange-700 dark:text-orange-300">
-                              The &quot;Spicy&quot; theme includes adult/sexual
-                              content. Only select this theme if you are
-                              comfortable with mature content.
+                            <label className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2 block">
+                              Select Spicy Level:
+                            </label>
+                            <div className="flex gap-2">
+                              {[1, 2, 3].map((level) => (
+                                <Button
+                                  key={level}
+                                  variant={
+                                    spicyLevel === level ? "default" : "outline"
+                                  }
+                                  onClick={() =>
+                                    setSpicyLevel(level as 1 | 2 | 3)
+                                  }
+                                  className={cn(
+                                    "flex-1",
+                                    spicyLevel === level
+                                      ? "bg-orange-600 hover:bg-orange-700 text-white"
+                                      : "border-orange-300 dark:border-orange-700"
+                                  )}
+                                  size="sm"
+                                >
+                                  Level {level}
+                                </Button>
+                              ))}
+                            </div>
+                            <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
+                              Level 1: Moderate | Level 2: More Explicit | Level
+                              3: Very Explicit
                             </p>
                           </div>
                         </div>
@@ -1309,6 +1394,85 @@ export default function Home() {
           )}
         </div>
       </div>
+      {/* 18+ Age Gate Dialog */}
+      <Dialog open={showAgeGate} onOpenChange={setShowAgeGate}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">
+              🔞 Age Verification Required
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              This content is restricted to adults 18 years and older
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-red-800 dark:text-red-200">
+                    Explicit Sexual Content Warning
+                  </p>
+                  <p className="text-xs text-red-700 dark:text-red-300">
+                    The Spicy theme contains explicit adult sexual content. By
+                    proceeding, you confirm that:
+                  </p>
+                  <ul className="text-xs text-red-700 dark:text-red-300 list-disc list-inside space-y-1 ml-2">
+                    <li>You are 18 years of age or older</li>
+                    <li>You consent to viewing explicit sexual content</li>
+                    <li>You understand this content is for adults only</li>
+                    <li>You will not share this content with minors</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+              <p className="text-xs text-orange-800 dark:text-orange-200 font-medium mb-1">
+                ⚠️ Legal Notice
+              </p>
+              <p className="text-xs text-orange-700 dark:text-orange-300">
+                All activities must be legal, consensual, and conducted in
+                private locations. This content does not encourage illegal
+                activity.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAgeGate(false);
+                setPendingSpicySelection(false);
+                setWasSelectingAll(false);
+              }}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsAgeVerified(true);
+                localStorage.setItem("spicy_age_verified", "true");
+                setShowAgeGate(false);
+                if (pendingSpicySelection) {
+                  // If they were trying to select all, select all themes
+                  if (wasSelectingAll) {
+                    setSelectedThemes([...SELECTABLE_THEMES]);
+                  } else {
+                    setSelectedThemes([...selectedThemes, "spicy"]);
+                  }
+                  setPendingSpicySelection(false);
+                  setWasSelectingAll(false);
+                }
+              }}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            >
+              I am 18+ and consent to view this content
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer textColor="#6b7280" iconColor="#bf8104" />
     </div>
   );
