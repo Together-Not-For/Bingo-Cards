@@ -796,6 +796,7 @@ export default function Home() {
                                   if (theme === "spicy") {
                                     if (!isAgeVerified) {
                                       setPendingSpicySelection(true);
+                                      setWasSelectingAll(false); // Reset flag for individual selection
                                       setShowAgeGate(true);
                                       return;
                                     }
@@ -1399,7 +1400,17 @@ export default function Home() {
         </div>
       </div>
       {/* 18+ Age Gate Dialog */}
-      <Dialog open={showAgeGate} onOpenChange={setShowAgeGate}>
+      <Dialog
+        open={showAgeGate}
+        onOpenChange={(open) => {
+          setShowAgeGate(open);
+          if (!open) {
+            // Dialog is closing, reset flags to prevent inconsistent state
+            setPendingSpicySelection(false);
+            setWasSelectingAll(false);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">
