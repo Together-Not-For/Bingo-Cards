@@ -753,28 +753,42 @@ export default function Home() {
                         <label className="text-sm font-medium">
                           Choose theme(s) for auto-fill:
                         </label>
-                        {selectedThemes.length < SELECTABLE_THEMES.length && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              // Check if spicy is in the themes to select and user isn't verified
-                              const willSelectSpicy =
-                                SELECTABLE_THEMES.includes("spicy") &&
-                                !selectedThemes.includes("spicy");
-                              if (willSelectSpicy && !isAgeVerified) {
-                                setPendingSpicySelection(true);
-                                setWasSelectingAll(true);
-                                setShowAgeGate(true);
-                              } else {
-                                setSelectedThemes([...SELECTABLE_THEMES]);
-                              }
-                            }}
-                            className="text-xs h-auto py-1 px-2"
-                          >
-                            Select All
-                          </Button>
-                        )}
+                        <div className="flex gap-2">
+                          {selectedThemes.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedThemes(["basic"]);
+                              }}
+                              className="text-xs h-auto py-1 px-2 text-red-500 hover:text-red-700"
+                            >
+                              Clear All
+                            </Button>
+                          )}
+                          {selectedThemes.length < SELECTABLE_THEMES.length && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                // Check if spicy is in the themes to select and user isn't verified
+                                const willSelectSpicy =
+                                  SELECTABLE_THEMES.includes("spicy") &&
+                                  !selectedThemes.includes("spicy");
+                                if (willSelectSpicy && !isAgeVerified) {
+                                  setPendingSpicySelection(true);
+                                  setWasSelectingAll(true);
+                                  setShowAgeGate(true);
+                                } else {
+                                  setSelectedThemes([...SELECTABLE_THEMES]);
+                                }
+                              }}
+                              className="text-xs h-auto py-1 px-2"
+                            >
+                              Select All
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {SELECTABLE_THEMES.map((theme) => {
