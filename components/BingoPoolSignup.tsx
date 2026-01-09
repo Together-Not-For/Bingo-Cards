@@ -70,7 +70,7 @@ export function BingoPoolSignup() {
           <CardTitle className="text-2xl">Join Our Bingo Pool</CardTitle>
         </div>
         <CardDescription>
-          Enter your name and phone number below to join. We'll confirm the
+          Enter your name and phone number below to join. We&apos;ll confirm the
           prizes for getting bingo and for completing the full board.
         </CardDescription>
       </CardHeader>
