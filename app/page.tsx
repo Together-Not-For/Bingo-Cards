@@ -31,16 +31,21 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   Check,
+  Copy,
+  ExternalLink,
   Palette,
   Pencil,
   Plus,
   Printer,
+  Search,
+  Share2,
   Shuffle,
   Sparkles,
   Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type BingoItem = {
   text: string;
@@ -48,6 +53,7 @@ type BingoItem = {
 };
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<BingoItem[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [bingoCard, setBingoCard] = useState<string[] | null>(null);
@@ -75,6 +81,14 @@ export default function Home() {
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // New state for save/share functionality
+  const [savedCardCode, setSavedCardCode] = useState<string | null>(null);
+  const [savingCard, setSavingCard] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [loadCodeInput, setLoadCodeInput] = useState("");
+  const [loadingCard, setLoadingCard] = useState(false);
+
   // Check localStorage for age verification on mount
   useEffect(() => {
     const verified = localStorage.getItem("spicy_age_verified");
@@ -82,6 +96,44 @@ export default function Home() {
       setIsAgeVerified(true);
     }
   }, []);
+
+  // Load card from URL params (for "Edit as New" flow)
+  useEffect(() => {
+    const loadCard = searchParams?.get("loadCard");
+    const itemsParam = searchParams?.get("items");
+    const customizationParam = searchParams?.get("customization");
+
+    if (loadCard === "true" && itemsParam) {
+      try {
+        const loadedItems: string[] = JSON.parse(decodeURIComponent(itemsParam));
+        const loadedCustomization = customizationParam
+          ? JSON.parse(decodeURIComponent(customizationParam))
+          : {};
+
+        // Convert loaded items to BingoItem format (all marked as not auto-filled since they're from a saved card)
+        const bingoItems: BingoItem[] = loadedItems
+          .filter((item) => item !== "FREE")
+          .map((text) => ({
+            text,
+            isAutoFilled: false,
+          }));
+
+        setItems(bingoItems);
+        setBingoCard(loadedItems);
+        setCustomization({ ...customization, ...loadedCustomization });
+
+        // Scroll to preview
+        setTimeout(() => {
+          previewRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 100);
+      } catch (error) {
+        console.error("Error loading card from URL:", error);
+      }
+    }
+  }, [searchParams]);
 
   // Helper function to convert HSL to RGB
   const hslToRgb = (h: number, s: number, l: number): string => {
@@ -467,6 +519,93 @@ export default function Home() {
     generateBingoCard();
   };
 
+  const handleSaveCard = async () => {
+    if (!bingoCard) return;
+
+    setSavingCard(true);
+    try {
+      const response = await fetch("/api/cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: bingoCard,
+          customization,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save card");
+      }
+
+      const data = await response.json();
+      setSavedCardCode(data.code);
+      setShowShareDialog(true);
+    } catch (error) {
+      console.error("Error saving card:", error);
+      alert("Failed to save card. Please try again.");
+    } finally {
+      setSavingCard(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!savedCardCode) return;
+
+    const link = `${window.location.origin}/card/${savedCardCode}`;
+    navigator.clipboard.writeText(link);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleLoadCard = async () => {
+    if (!loadCodeInput.trim()) return;
+
+    setLoadingCard(true);
+    try {
+      const response = await fetch(`/api/cards/${loadCodeInput.trim()}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          alert("Card not found. Please check the code and try again.");
+        } else {
+          throw new Error("Failed to load card");
+        }
+        setLoadingCard(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Load the card data
+      const loadedItems: BingoItem[] = data.items
+        .filter((item: string) => item !== "FREE")
+        .map((text: string) => ({
+          text,
+          isAutoFilled: false,
+        }));
+
+      setItems(loadedItems);
+      setBingoCard(data.items);
+      setCustomization({ ...customization, ...data.customization });
+      setLoadCodeInput("");
+
+      // Scroll to preview
+      setTimeout(() => {
+        previewRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    } catch (error) {
+      console.error("Error loading card:", error);
+      alert("Failed to load card. Please try again.");
+    } finally {
+      setLoadingCard(false);
+    }
+  };
+
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     if (printWindow && bingoCard) {
@@ -685,6 +824,45 @@ export default function Home() {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-8">
+          {/* Load Existing Card Section */}
+          <Card className="shadow-lg border-2 border-purple-300 dark:border-purple-500">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Load an Existing Card
+              </CardTitle>
+              <CardDescription>
+                Enter a card code to view or edit a previously saved bingo card
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter 6-character code (e.g., ABC123)"
+                  value={loadCodeInput}
+                  onChange={(e) => setLoadCodeInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && handleLoadCard()}
+                  className="flex-1 font-mono"
+                  maxLength={6}
+                />
+                <Button
+                  onClick={handleLoadCard}
+                  disabled={loadingCard || loadCodeInput.length !== 6}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg"
+                >
+                  {loadingCard ? (
+                    "Loading..."
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Load Card
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Item Management Card */}
           <Card className="shadow-lg">
             <CardHeader>
@@ -1031,6 +1209,21 @@ export default function Home() {
                     >
                       <Shuffle className="h-4 w-4 mr-2" />
                       Randomize
+                    </Button>
+                    <Button
+                      onClick={handleSaveCard}
+                      variant="outline"
+                      className="flex-1 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950"
+                      disabled={savingCard}
+                    >
+                      {savingCard ? (
+                        "Saving..."
+                      ) : (
+                        <>
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Save & Share
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={handlePrint}
@@ -1571,6 +1764,107 @@ export default function Home() {
             >
               I am 18+ and consent to view this content
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+              <Share2 className="h-6 w-6 text-green-600" />
+              Card Saved Successfully!
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Your bingo card has been saved and can be shared with anyone
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                Your Card Code:
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-white dark:bg-gray-800 border-2 border-green-300 dark:border-green-700 rounded-lg p-3 text-center">
+                  <span className="text-2xl font-bold font-mono text-green-700 dark:text-green-400">
+                    {savedCardCode?.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Shareable Link:
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={
+                    savedCardCode
+                      ? `${window.location.origin}/card/${savedCardCode}`
+                      : ""
+                  }
+                  className="flex-1 font-mono text-sm"
+                />
+                <Button
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  className={cn(
+                    "transition-colors",
+                    copySuccess && "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700"
+                  )}
+                >
+                  {copySuccess ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-600" />
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+              {copySuccess && (
+                <p className="text-xs text-green-600 dark:text-green-400 text-center">
+                  ✓ Link copied to clipboard!
+                </p>
+              )}
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-xs text-blue-800 dark:text-blue-200 font-medium mb-1">
+                💡 What can you do with this?
+              </p>
+              <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <li>• Share the link with friends and family</li>
+                <li>• Anyone can view and print this exact card</li>
+                <li>• Others can click "Edit as New" to create their own version</li>
+                <li>• Your original card will never change</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowShareDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Close
+            </Button>
+            {savedCardCode && (
+              <Button
+                onClick={() => {
+                  window.open(`/card/${savedCardCode}`, "_blank");
+                }}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Card
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
