@@ -71,7 +71,7 @@ export default function SharedCardPage({
         cardBackgroundColor: "transparent",
         cellFontSize: 1.0,
         cellBorderSize: 3,
-        ...cardData.customization,
+        ...(cardData.customization || {}),
       };
 
       const getFontSize = (text: string) => {
@@ -256,7 +256,7 @@ export default function SharedCardPage({
     // Encode the card data in URL params and redirect to home
     const itemsParam = encodeURIComponent(JSON.stringify(cardData.items));
     const customizationParam = encodeURIComponent(
-      JSON.stringify(cardData.customization)
+      JSON.stringify(cardData.customization || {})
     );
     
     router.push(

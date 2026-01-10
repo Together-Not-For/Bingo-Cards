@@ -120,7 +120,8 @@ export default function Home() {
 
         setItems(bingoItems);
         setBingoCard(loadedItems);
-        setCustomization((c) => ({ ...c, ...loadedCustomization }));
+        // Handle null customization - if parsed value is null, use empty object
+        setCustomization((c) => ({ ...c, ...(loadedCustomization && typeof loadedCustomization === 'object' ? loadedCustomization : {}) }));
 
         // Scroll to preview
         setTimeout(() => {
@@ -588,7 +589,8 @@ export default function Home() {
 
       setItems(loadedItems);
       setBingoCard(data.items);
-      setCustomization({ ...customization, ...data.customization });
+      // Handle null customization - if data.customization is null, use empty object
+      setCustomization({ ...customization, ...(data.customization || {}) });
       setLoadCodeInput("");
 
       // Scroll to preview
