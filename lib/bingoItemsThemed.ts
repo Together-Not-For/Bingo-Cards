@@ -453,7 +453,6 @@ export const THEMED_ITEMS: Record<Theme, string[]> = {
     "Had sex after a planned tease day of sexting",
     "Posted explicit photos anonymously online and interacted with comments",
   ],
-
   spicy3: [
     "Did a dominant and submissive scene",
     "Tried rope bondage",

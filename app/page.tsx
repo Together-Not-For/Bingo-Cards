@@ -30,12 +30,15 @@ import {
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
+  Check,
   Palette,
+  Pencil,
   Plus,
   Printer,
   Shuffle,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -67,6 +70,8 @@ export default function Home() {
   const [isAgeVerified, setIsAgeVerified] = useState(false);
   const [pendingSpicySelection, setPendingSpicySelection] = useState(false);
   const [wasSelectingAll, setWasSelectingAll] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
   const previewRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -344,6 +349,27 @@ export default function Home() {
 
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
+  };
+
+  const editItem = (index: number) => {
+    setEditingIndex(index);
+    setEditValue(items[index].text);
+  };
+
+  const updateItem = (index: number) => {
+    const trimmedValue = editValue.trim();
+    if (trimmedValue && !items.some((item, i) => i !== index && item.text === trimmedValue)) {
+      const updatedItems = [...items];
+      updatedItems[index] = { ...updatedItems[index], text: trimmedValue };
+      setItems(updatedItems);
+      setEditingIndex(null);
+      setEditValue("");
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditValue("");
   };
 
   const autoFillItems = () => {
@@ -697,23 +723,70 @@ export default function Home() {
                       key={index}
                       className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className="text-sm font-medium">{item.text}</span>
-                        {item.isAutoFilled && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            Auto-filled
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeItem(index)}
-                        className="h-8 w-8 text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {editingIndex === index ? (
+                        <>
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                updateItem(index);
+                              } else if (e.key === "Escape") {
+                                cancelEdit();
+                              }
+                            }}
+                            className="flex-1 mr-2"
+                            autoFocus
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => updateItem(index)}
+                            className="h-8 w-8 text-green-600 hover:text-green-700"
+                            disabled={!editValue.trim() || items.some((item, i) => i !== index && item.text === editValue.trim())}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={cancelEdit}
+                            className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-sm font-medium">{item.text}</span>
+                            {item.isAutoFilled && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Auto-filled
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => editItem(index)}
+                              className="h-8 w-8 text-blue-500 hover:text-blue-700"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeItem(index)}
+                              className="h-8 w-8 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))
                 )}
