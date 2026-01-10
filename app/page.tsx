@@ -44,7 +44,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type BingoItem = {
@@ -52,7 +52,7 @@ type BingoItem = {
   isAutoFilled: boolean;
 };
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [items, setItems] = useState<BingoItem[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -1873,5 +1873,20 @@ export default function Home() {
 
       <Footer textColor="#6b7280" iconColor="#bf8104" />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
