@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Connect to Neon and insert the signup into public.bingo_pool_signups
+    // Connect to Neon and insert the signup into bingo.bingo_pool_signups
     const sql = neon(connectionString);
     await sql`
-      INSERT INTO public.bingo_pool_signups (name, phone_number)
+      INSERT INTO bingo.bingo_pool_signups (name, phone_number)
       VALUES (${name.trim()}, ${cleanedPhone})
     `;
 
