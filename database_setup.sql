@@ -22,3 +22,18 @@ CREATE INDEX idx_bingo_cards_code ON bingo.bingo_cards(code);
 -- CREATE UNIQUE INDEX idx_phone_number ON bingo.bingo_pool_signups(phone_number);
 -- CREATE INDEX idx_created_at ON bingo.bingo_pool_signups(created_at);
 
+-- Create the analytics_events table for custom event tracking
+CREATE TABLE bingo.analytics_events (
+  id BIGSERIAL PRIMARY KEY,
+  event_name VARCHAR(100) NOT NULL,
+  event_data JSONB,
+  user_agent TEXT,
+  referrer TEXT,
+  page_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for efficient querying
+CREATE INDEX idx_analytics_events_name ON bingo.analytics_events(event_name);
+CREATE INDEX idx_analytics_events_created_at ON bingo.analytics_events(created_at);
+

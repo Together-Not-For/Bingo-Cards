@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+  trackCardGenerated,
+  trackCardLoaded,
+  trackCardPrinted,
+  trackCardSaved,
+  trackThemeSelected,
+} from "@/lib/analytics";
+import {
   SELECTABLE_THEMES,
   THEMED_ITEMS,
   THEME_LABELS,
@@ -129,6 +136,9 @@ function HomeContent() {
             ? loadedCustomization
             : {}),
         }));
+
+        // Track card load from URL
+        trackCardLoaded("url");
 
         // Scroll to preview
         setTimeout(() => {
@@ -516,6 +526,9 @@ function HomeContent() {
 
     setBingoCard(grid);
 
+    // Track card generation
+    trackCardGenerated();
+
     // Scroll to preview after a short delay to ensure it's rendered
     setTimeout(() => {
       previewRef.current?.scrollIntoView({
@@ -553,6 +566,9 @@ function HomeContent() {
       const data = await response.json();
       setSavedCardCode(data.code);
       setShowShareDialog(true);
+
+      // Track card save
+      trackCardSaved(data.code);
     } catch (error) {
       console.error("Error saving card:", error);
       alert("Failed to save card. Please try again.");
@@ -608,6 +624,9 @@ function HomeContent() {
       });
       setLoadCodeInput("");
 
+      // Track card load
+      trackCardLoaded("code", loadCodeInput.trim());
+
       // Scroll to preview
       setTimeout(() => {
         previewRef.current?.scrollIntoView({
@@ -624,6 +643,9 @@ function HomeContent() {
   };
 
   const handlePrint = () => {
+    // Track print event
+    trackCardPrinted(savedCardCode || undefined);
+
     const printWindow = window.open("", "_blank");
     if (printWindow && bingoCard) {
       // Calculate font size based on text length and user's font size multiplier
@@ -1038,6 +1060,7 @@ function HomeContent() {
                               size="sm"
                               onClick={() => {
                                 setSelectedThemes(["basic"]);
+                                trackThemeSelected(["basic"]);
                               }}
                               className="text-xs h-auto py-1 px-2 text-red-500 hover:text-red-700"
                             >
@@ -1058,7 +1081,9 @@ function HomeContent() {
                                   setWasSelectingAll(true);
                                   setShowAgeGate(true);
                                 } else {
-                                  setSelectedThemes([...SELECTABLE_THEMES]);
+                                  const allThemes = [...SELECTABLE_THEMES];
+                                  setSelectedThemes(allThemes);
+                                  trackThemeSelected(allThemes);
                                 }
                               }}
                               className="text-xs h-auto py-1 px-2"
@@ -1079,9 +1104,11 @@ function HomeContent() {
                                 if (isSelected) {
                                   // Deselect if already selected (but keep at least one)
                                   if (selectedThemes.length > 1) {
-                                    setSelectedThemes(
-                                      selectedThemes.filter((t) => t !== theme)
+                                    const newThemes = selectedThemes.filter(
+                                      (t) => t !== theme
                                     );
+                                    setSelectedThemes(newThemes);
+                                    trackThemeSelected(newThemes);
                                   }
                                 } else {
                                   // Check if trying to select spicy theme
@@ -1094,7 +1121,9 @@ function HomeContent() {
                                     }
                                   }
                                   // Add to selection
-                                  setSelectedThemes([...selectedThemes, theme]);
+                                  const newThemes = [...selectedThemes, theme];
+                                  setSelectedThemes(newThemes);
+                                  trackThemeSelected(newThemes);
                                 }
                               }}
                               className="h-auto py-2 px-3 text-xs capitalize"
@@ -1779,9 +1808,13 @@ function HomeContent() {
                 if (pendingSpicySelection) {
                   // If they were trying to select all, select all themes
                   if (wasSelectingAll) {
-                    setSelectedThemes([...SELECTABLE_THEMES]);
+                    const allThemes = [...SELECTABLE_THEMES] as Theme[];
+                    setSelectedThemes(allThemes);
+                    trackThemeSelected(allThemes);
                   } else {
-                    setSelectedThemes([...selectedThemes, "spicy"]);
+                    const newThemes = [...selectedThemes, "spicy"] as Theme[];
+                    setSelectedThemes(newThemes);
+                    trackThemeSelected(newThemes);
                   }
                   setPendingSpicySelection(false);
                   setWasSelectingAll(false);

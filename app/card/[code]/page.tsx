@@ -5,6 +5,11 @@ import Footer from "@/components/common/Footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  trackCardLoaded,
+  trackCardPrinted,
+  trackEditAsNew,
+} from "@/lib/analytics";
 import { ArrowLeft, Edit, Printer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -44,6 +49,9 @@ export default function SharedCardPage({
 
         const data = await response.json();
         setCardData(data);
+        
+        // Track card load
+        trackCardLoaded("url", params.code);
       } catch (err) {
         console.error("Error fetching card:", err);
         setError("Failed to load card. Please check your connection.");
@@ -57,6 +65,9 @@ export default function SharedCardPage({
 
   const handlePrint = () => {
     if (!cardData) return;
+    
+    // Track print event
+    trackCardPrinted(cardData.code);
 
     const printWindow = window.open("", "_blank");
     if (printWindow) {
@@ -252,6 +263,9 @@ export default function SharedCardPage({
 
   const handleEditAsNew = () => {
     if (!cardData) return;
+    
+    // Track edit as new event
+    trackEditAsNew(cardData.code);
     
     // Encode the card data in URL params and redirect to home
     const itemsParam = encodeURIComponent(JSON.stringify(cardData.items));
