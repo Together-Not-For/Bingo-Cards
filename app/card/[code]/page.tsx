@@ -385,8 +385,8 @@ export default function SharedCardPage({
                   💡 Share this card:
                 </p>
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Anyone with this link can view this bingo card. Click "Edit as
-                  New" to create your own version.
+                  Anyone with this link can view this bingo card. Click &quot;Edit as
+                  New&quot; to create your own version.
                 </p>
               </div>
             </CardContent>

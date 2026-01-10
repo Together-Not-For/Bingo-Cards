@@ -120,7 +120,7 @@ export default function Home() {
 
         setItems(bingoItems);
         setBingoCard(loadedItems);
-        setCustomization({ ...customization, ...loadedCustomization });
+        setCustomization((c) => ({ ...c, ...loadedCustomization }));
 
         // Scroll to preview
         setTimeout(() => {
@@ -1841,7 +1841,7 @@ export default function Home() {
               <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
                 <li>• Share the link with friends and family</li>
                 <li>• Anyone can view and print this exact card</li>
-                <li>• Others can click "Edit as New" to create their own version</li>
+                <li>• Others can click &quot;Edit as New&quot; to create their own version</li>
                 <li>• Your original card will never change</li>
               </ul>
             </div>
