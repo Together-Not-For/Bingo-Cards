@@ -44,8 +44,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 type BingoItem = {
   text: string;
@@ -105,7 +105,9 @@ function HomeContent() {
 
     if (loadCard === "true" && itemsParam) {
       try {
-        const loadedItems: string[] = JSON.parse(decodeURIComponent(itemsParam));
+        const loadedItems: string[] = JSON.parse(
+          decodeURIComponent(itemsParam)
+        );
         const loadedCustomization = customizationParam
           ? JSON.parse(decodeURIComponent(customizationParam))
           : {};
@@ -121,7 +123,12 @@ function HomeContent() {
         setItems(bingoItems);
         setBingoCard(loadedItems);
         // Handle null customization - if parsed value is null, use empty object
-        setCustomization((c) => ({ ...c, ...(loadedCustomization && typeof loadedCustomization === 'object' ? loadedCustomization : {}) }));
+        setCustomization((c) => ({
+          ...c,
+          ...(loadedCustomization && typeof loadedCustomization === "object"
+            ? loadedCustomization
+            : {}),
+        }));
 
         // Scroll to preview
         setTimeout(() => {
@@ -411,7 +418,10 @@ function HomeContent() {
 
   const updateItem = (index: number) => {
     const trimmedValue = editValue.trim();
-    if (trimmedValue && !items.some((item, i) => i !== index && item.text === trimmedValue)) {
+    if (
+      trimmedValue &&
+      !items.some((item, i) => i !== index && item.text === trimmedValue)
+    ) {
       const updatedItems = [...items];
       updatedItems[index] = { ...updatedItems[index], text: trimmedValue };
       setItems(updatedItems);
@@ -589,8 +599,13 @@ function HomeContent() {
 
       setItems(loadedItems);
       setBingoCard(data.items);
-      // Handle null customization - if data.customization is null, use empty object
-      setCustomization({ ...customization, ...(data.customization || {}) });
+      // Handle null customization - if data.customization is null or not an object, use empty object
+      setCustomization({
+        ...customization,
+        ...(data.customization && typeof data.customization === "object"
+          ? data.customization
+          : {}),
+      });
       setLoadCodeInput("");
 
       // Scroll to preview
@@ -842,7 +857,9 @@ function HomeContent() {
                 <Input
                   placeholder="Enter 6-character code (e.g., ABC123)"
                   value={loadCodeInput}
-                  onChange={(e) => setLoadCodeInput(e.target.value.toUpperCase())}
+                  onChange={(e) =>
+                    setLoadCodeInput(e.target.value.toUpperCase())
+                  }
                   onKeyDown={(e) => e.key === "Enter" && handleLoadCard()}
                   className="flex-1 font-mono"
                   maxLength={6}
@@ -923,7 +940,13 @@ function HomeContent() {
                             size="icon"
                             onClick={() => updateItem(index)}
                             className="h-8 w-8 text-green-600 hover:text-green-700"
-                            disabled={!editValue.trim() || items.some((item, i) => i !== index && item.text === editValue.trim())}
+                            disabled={
+                              !editValue.trim() ||
+                              items.some(
+                                (item, i) =>
+                                  i !== index && item.text === editValue.trim()
+                              )
+                            }
                           >
                             <Check className="h-4 w-4" />
                           </Button>
@@ -939,7 +962,9 @@ function HomeContent() {
                       ) : (
                         <>
                           <div className="flex items-center gap-2 flex-1">
-                            <span className="text-sm font-medium">{item.text}</span>
+                            <span className="text-sm font-medium">
+                              {item.text}
+                            </span>
                             {item.isAutoFilled && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                 <Sparkles className="h-3 w-3 mr-1" />
@@ -1815,7 +1840,8 @@ function HomeContent() {
                   variant="outline"
                   className={cn(
                     "transition-colors",
-                    copySuccess && "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700"
+                    copySuccess &&
+                      "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700"
                   )}
                 >
                   {copySuccess ? (
@@ -1843,7 +1869,10 @@ function HomeContent() {
               <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
                 <li>• Share the link with friends and family</li>
                 <li>• Anyone can view and print this exact card</li>
-                <li>• Others can click &quot;Edit as New&quot; to create their own version</li>
+                <li>
+                  • Others can click &quot;Edit as New&quot; to create their own
+                  version
+                </li>
                 <li>• Your original card will never change</li>
               </ul>
             </div>
@@ -1878,14 +1907,16 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <HomeContent />
     </Suspense>
   );
