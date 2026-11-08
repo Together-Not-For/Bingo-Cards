@@ -273,20 +273,6 @@ function HomeContent() {
       }
     }
 
-    // Title: darker version of base hue
-    const title = hslToRgb(
-      baseHue,
-      60 + Math.random() * 30,
-      25 + Math.random() * 15
-    );
-
-    // Footer: muted version of base hue
-    const footer = hslToRgb(
-      baseHue,
-      30 + Math.random() * 20,
-      50 + Math.random() * 20
-    );
-
     // Card background: very light tint or transparent
     const cardBg =
       Math.random() > 0.5
@@ -299,11 +285,13 @@ function HomeContent() {
       cellBorderColor: cellBorder,
       freeCellBackgroundColor: freeBg,
       freeCellTextColor: freeText,
-      titleColor: title,
-      footerColor: footer,
+      titleColor: cellText,
+      footerColor: cellText,
       cardBackgroundColor: cardBg,
       cellFontSize: 1.0,
       cellBorderSize: 3,
+      altCellBackgroundColor: cellText,
+      altCellTextColor: cellBg,
     };
   };
 
@@ -856,6 +844,7 @@ function HomeContent() {
                       `<div class="bingo-cell ${
                         index === 12 ? "free" : ""
                       } ${
+                        printCustomization.alternateColors !== false &&
                         printCustomization.altCellBackgroundColor &&
                         index !== 12 &&
                         (Math.floor(index / 5) + (index % 5)) % 2 === 1
@@ -905,8 +894,8 @@ function HomeContent() {
         </header>
 
         <section className="mx-auto mt-5 max-w-2xl sm:mt-8">
-          <h1 className="text-4xl font-bold leading-tight text-primary sm:text-6xl">
-            Let&apos;s make your 2026 bingo card
+          <h1 className="w-full text-center text-4xl font-bold leading-tight text-primary sm:text-6xl">
+            2026 bingo card creator
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
             Pick 24 things you want to do this year. Print it, or send it to the
@@ -1296,9 +1285,9 @@ function HomeContent() {
                               onClick={() => {
                                 if (key === "random") {
                                   // Generate new random colors each time
-                                  setCustomization(generateRandomPreset());
+                                  setCustomization({ ...generateRandomPreset(), alternateColors: customization.alternateColors });
                                 } else {
-                                  setCustomization(preset.colors);
+                                  setCustomization({ ...preset.colors, alternateColors: customization.alternateColors });
                                 }
                               }}
                               className="h-auto py-3 flex flex-col items-center gap-1"
@@ -1358,6 +1347,11 @@ function HomeContent() {
                           ))}
                         </div>
                       </div>
+
+                      <label className="flex items-center gap-3 text-base font-semibold">
+                        <input type="checkbox" checked={customization.alternateColors !== false} onChange={(e) => setCustomization({ ...customization, alternateColors: e.target.checked })} />
+                        Alternate square colors
+                      </label>
 
                       {/* Font Size and Border Size Controls */}
                       <div className="space-y-5">

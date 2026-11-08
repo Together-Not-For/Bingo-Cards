@@ -22,6 +22,7 @@ export function safePrintCustomization(value: Partial<BingoCardCustomization>): 
     cardBackgroundColor: value.cardBackgroundColor === "transparent" ? "transparent" : color(value.cardBackgroundColor, "#ffffff"),
     cellFontSize: number(value.cellFontSize, 1, 0.5, 2),
     cellBorderSize: number(value.cellBorderSize, 3, 1, 8),
+    alternateColors: value.alternateColors !== false,
     altCellBackgroundColor:
       value.altCellBackgroundColor === undefined
         ? undefined

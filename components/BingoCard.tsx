@@ -14,6 +14,7 @@ export interface BingoCardCustomization {
   cellFontSize: number; // Font size multiplier (0.5 to 2.0)
   cellBorderSize: number; // Border size in pixels (1 to 8)
   // Optional second tile color: every other square, like a patchwork quilt
+  alternateColors?: boolean;
   altCellBackgroundColor?: string;
   altCellTextColor?: string;
 }
@@ -95,6 +96,7 @@ export function BingoCard({
           // Checkerboard: odd squares use the second tile color, if there is one
           const isAlt =
             !isFree &&
+            custom.alternateColors !== false &&
             !!custom.altCellBackgroundColor &&
             (Math.floor(index / 5) + (index % 5)) % 2 === 1;
           const tileColor = isFree

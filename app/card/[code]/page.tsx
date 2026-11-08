@@ -250,6 +250,7 @@ export default function SharedCardPage({
                       `<div class="bingo-cell ${
                         index === 12 ? "free" : ""
                       } ${
+                        printCustomization.alternateColors !== false &&
                         printCustomization.altCellBackgroundColor &&
                         index !== 12 &&
                         (Math.floor(index / 5) + (index % 5)) % 2 === 1
@@ -370,7 +371,7 @@ export default function SharedCardPage({
         {header}
 
         <section className="mt-4">
-          <h1 className="text-4xl font-bold leading-tight text-primary sm:text-5xl">
+          <h1 className="text-center text-4xl font-bold leading-tight text-primary sm:text-5xl">
             {cardTitle(firstName)}
           </h1>
           <p className="mt-3 text-lg text-muted-foreground">
