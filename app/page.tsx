@@ -1021,8 +1021,21 @@ function HomeContent() {
             </ul>
 
             <div className="mt-3 flex items-center justify-between">
-              <p className="text-lg font-bold" aria-live="polite">
-                {items.length} of 24
+              <p className="text-lg" aria-live="polite">
+                <span className="font-bold">{items.length} of 24</span>
+                {items.length < 24 && (
+                  <span>
+                    {" "}
+                    · add {24 - items.length} more to make your card
+                  </span>
+                )}
+                {items.length > 24 && (
+                  <span>
+                    {" "}
+                    · remove {items.length - 24} to make your card
+                  </span>
+                )}
+                {items.length === 24 && <span> · ready</span>}
               </p>
               {items.length > 0 && (
                 <Button
@@ -1085,7 +1098,7 @@ function HomeContent() {
                       return (
                         <Button
                           key={theme}
-                          variant={isSelected ? "default" : "outline"}
+                          variant="outline"
                           aria-pressed={isSelected}
                           onClick={() => {
                             if (isSelected) {
@@ -1111,7 +1124,10 @@ function HomeContent() {
                             }
                           }}
                           size="sm"
-                          className="justify-start"
+                          className={cn(
+                            "justify-start",
+                            isSelected && "bg-foreground text-background"
+                          )}
                         >
                           {isSelected && <Check className="mr-2 h-4 w-4" />}
                           {THEME_LABELS[theme]}
@@ -1152,35 +1168,27 @@ function HomeContent() {
 
                 <Button
                   onClick={autoFillItems}
-                  variant="outline"
                   className="w-full"
                   size="lg"
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
                   Fill in {24 - items.length} for me
                 </Button>
+                <p className="-mt-1 text-muted-foreground">
+                  Not AI. It picks at random from a list of goals we saved
+                </p>
               </div>
             )}
 
-            <Button
-              onClick={generateBingoCard}
-              disabled={items.length !== 24}
-              className={cn(
-                "mt-3 w-full",
-                items.length === 24 && "bg-accent text-accent-foreground"
-              )}
-              size="lg"
-            >
-              {items.length < 24
-                ? `Add ${24 - items.length} more ${
-                    24 - items.length === 1 ? "thing" : "things"
-                  } to make your card`
-                : items.length > 24
-                ? `Remove ${items.length - 24} ${
-                    items.length - 24 === 1 ? "thing" : "things"
-                  } to make your card`
-                : "Make my card"}
-            </Button>
+            {items.length === 24 && (
+              <Button
+                onClick={generateBingoCard}
+                className="mt-3 w-full"
+                size="lg"
+              >
+                Make my card
+              </Button>
+            )}
           </section>
 
           {/* Preview and Customization Container */}
@@ -1709,6 +1717,7 @@ function HomeContent() {
                 ["Can I print it?", "Yep. Hit Print, then pick paper or Save as PDF"],
                 ["Who can see my card?", "Only people you send the link or code to. Search engines can\u2019t find it"],
                 ["How many do I need?", "24. The middle square is free"],
+                ["Is Fill in for me AI?", "No. It shuffles a list of goals we saved ourselves and picks some at random. Nothing is written for you"],
                 ["Can I change it after I send it?", "Not once it\u2019s saved. Open it, hit Edit as new, and you get a copy to change"],
               ].map(([question, answer]) => (
                 <details key={question} className="group">
