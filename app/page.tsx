@@ -1271,13 +1271,13 @@ function HomeContent() {
                   )}
                   <div className="mt-2">
               <Card>
-                    <CardContent className="space-y-8">
+                    <CardContent className="space-y-6 rounded-lg border border-foreground/15 p-4 sm:p-6">
                       {/* Presets */}
                       <div>
                         <label className="text-lg font-bold mb-3 block">
                           Style
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                           {Object.entries(presets).map(([key, preset]) => (
                             <Button
                               key={key}
@@ -1290,7 +1290,8 @@ function HomeContent() {
                                   setCustomization({ ...preset.colors, alternateColors: customization.alternateColors });
                                 }
                               }}
-                              className="h-auto py-3 flex flex-col items-center gap-1"
+                              aria-pressed={key !== "random" && customization.cellBackgroundColor === preset.colors.cellBackgroundColor && customization.freeCellBackgroundColor === preset.colors.freeCellBackgroundColor}
+                              className="h-auto min-h-16 flex-row justify-start gap-3 border-foreground/20 px-3 py-3 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/30"
                             >
                               <div className="flex gap-1 items-center justify-center">
                                 <div
@@ -1348,8 +1349,8 @@ function HomeContent() {
                         </div>
                       </div>
 
-                      <label className="flex items-center gap-3 text-base font-semibold">
-                        <input type="checkbox" checked={customization.alternateColors !== false} onChange={(e) => setCustomization({ ...customization, alternateColors: e.target.checked })} />
+                      <label className="flex cursor-pointer items-center gap-3 border-t border-foreground/15 pt-5 text-base font-semibold">
+                        <input className="h-5 w-5 accent-primary" type="checkbox" checked={customization.alternateColors !== false} onChange={(e) => setCustomization({ ...customization, alternateColors: e.target.checked })} />
                         Alternate square colors
                       </label>
 
@@ -1372,7 +1373,7 @@ function HomeContent() {
                                   cellFontSize: parseFloat(e.target.value),
                                 })
                               }
-                              className="flex-1 h-6 appearance-none cursor-pointer"
+                              className="flex-1 h-6 cursor-pointer accent-primary"
                             />
                             <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
                               {customization.cellFontSize.toFixed(1)}x
@@ -1396,7 +1397,7 @@ function HomeContent() {
                                   cellBorderSize: parseInt(e.target.value),
                                 })
                               }
-                              className="flex-1 h-6 appearance-none cursor-pointer"
+                              className="flex-1 h-6 cursor-pointer accent-primary"
                             />
                             <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
                               {customization.cellBorderSize}px
