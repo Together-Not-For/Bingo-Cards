@@ -106,6 +106,34 @@ function HomeContent() {
   const [loadCodeInput, setLoadCodeInput] = useState("");
   const [loadingCard, setLoadingCard] = useState(false);
 
+  const [draftReady, setDraftReady] = useState(false);
+  const [clearedItems, setClearedItems] = useState<BingoItem[] | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bingo_creator_draft_v1");
+      if (raw && searchParams?.get("loadCard") !== "true") {
+        const draft = JSON.parse(raw);
+        if (Array.isArray(draft.items)) setItems(draft.items.filter((item: unknown) => item && typeof item === "object" && typeof (item as BingoItem).text === "string").slice(0, 24));
+        if (Array.isArray(draft.bingoCard) && draft.bingoCard.every((item: unknown) => typeof item === "string")) setBingoCard(draft.bingoCard);
+        if (draft.customization && typeof draft.customization === "object") setCustomization((current) => ({ ...current, ...draft.customization }));
+        if (typeof draft.firstName === "string") setFirstName(draft.firstName);
+      }
+    } catch (error) {
+      console.warn("Could not restore bingo draft", error);
+    }
+    setDraftReady(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    try {
+      localStorage.setItem("bingo_creator_draft_v1", JSON.stringify({ items, bingoCard, customization, firstName }));
+    } catch (error) {
+      console.warn("Could not save bingo draft", error);
+    }
+  }, [draftReady, items, bingoCard, customization, firstName]);
+
   // Check localStorage for age verification on mount
   useEffect(() => {
     const verified = localStorage.getItem("spicy_age_verified");
@@ -1072,7 +1100,7 @@ function HomeContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setItems([])}
+                  onClick={() => { setClearedItems(items); setItems([]); }}
                   className="text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -1080,6 +1108,10 @@ function HomeContent() {
                 </Button>
               )}
             </div>
+
+            {clearedItems && items.length === 0 && (
+              <p className="mt-2" role="status">Goals cleared. <button type="button" className="font-semibold underline" onClick={() => { setItems(clearedItems); setClearedItems(null); }}>Undo</button></p>
+            )}
 
             {items.length < 24 && (
               <div className="mt-4 space-y-3">
@@ -1184,7 +1216,7 @@ function HomeContent() {
                           variant={spicyLevel === level ? "default" : "outline"}
                           aria-pressed={spicyLevel === level}
                           onClick={() => setSpicyLevel(level as 1 | 2 | 3)}
-                          className="flex-1 bg-background"
+                          className={cn("flex-1", spicyLevel !== level && "bg-background")}
                           size="sm"
                         >
                           Level {level}
@@ -1363,6 +1395,7 @@ function HomeContent() {
                           <div className="flex items-center gap-2">
                             <input
                               type="range"
+                              aria-label="Text size"
                               min="0.5"
                               max="2.0"
                               step="0.1"
@@ -1387,6 +1420,7 @@ function HomeContent() {
                           <div className="flex items-center gap-2">
                             <input
                               type="range"
+                              aria-label="Border size"
                               min="1"
                               max="8"
                               step="1"
@@ -1429,6 +1463,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="Cell Background color picker"
                                   value={customization.cellBackgroundColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1440,6 +1475,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.cellBackgroundColor}
+                                  aria-label="cell Background Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1458,6 +1494,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="Cell Text color picker"
                                   value={customization.cellTextColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1469,6 +1506,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.cellTextColor}
+                                  aria-label="cell Text Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1487,6 +1525,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="Cell Border color picker"
                                   value={customization.cellBorderColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1498,6 +1537,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.cellBorderColor}
+                                  aria-label="cell Border Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1516,6 +1556,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="FREE Background color picker"
                                   value={customization.freeCellBackgroundColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1527,6 +1568,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.freeCellBackgroundColor}
+                                  aria-label="free Cell Background Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1545,6 +1587,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="FREE Text color picker"
                                   value={customization.freeCellTextColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1556,6 +1599,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.freeCellTextColor}
+                                  aria-label="free Cell Text Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1574,6 +1618,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="Title Color color picker"
                                   value={customization.titleColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1585,6 +1630,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.titleColor}
+                                  aria-label="title Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1603,6 +1649,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="Footer Color color picker"
                                   value={customization.footerColor}
                                   onChange={(e) =>
                                     setCustomization({
@@ -1614,6 +1661,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.footerColor}
+                                  aria-label="footer Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
@@ -1632,6 +1680,7 @@ function HomeContent() {
                               <div className="flex gap-2">
                                 <input
                                   type="color"
+                                  aria-label="Card Background color picker"
                                   value={
                                     customization.cardBackgroundColor ===
                                     "transparent"
@@ -1648,6 +1697,7 @@ function HomeContent() {
                                 />
                                 <Input
                                   value={customization.cardBackgroundColor}
+                                  aria-label="card Background Color value"
                                   onChange={(e) =>
                                     setCustomization({
                                       ...customization,
