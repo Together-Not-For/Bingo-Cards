@@ -35,6 +35,7 @@ import {
   type Theme,
 } from "@/lib/bingoItemsThemed";
 import { cn } from "@/lib/utils";
+import { cleanFirstName } from "@/lib/cardTitle";
 import { escapePrintText, safePrintCustomization } from "@/lib/printSafety";
 import {
   AlertTriangle,
@@ -96,6 +97,7 @@ function HomeContent() {
   const [savingCard, setSavingCard] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [showStyleInfo, setShowStyleInfo] = useState(false);
+  const [duplicateNotice, setDuplicateNotice] = useState("");
   const styleDetailsRef = useRef<HTMLDetailsElement>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -136,12 +138,12 @@ function HomeContent() {
         setItems(bingoItems);
         setBingoCard(loadedItems);
         // Handle null customization - if parsed value is null, use empty object
-        setCustomization((c) => ({
-          ...c,
-          ...(loadedCustomization && typeof loadedCustomization === "object"
+        const { firstName: loadedName, ...loadedStyle } =
+          loadedCustomization && typeof loadedCustomization === "object"
             ? loadedCustomization
-            : {}),
-        }));
+            : ({} as Record<string, unknown>);
+        setFirstName(cleanFirstName(loadedName));
+        setCustomization((c) => ({ ...c, ...loadedStyle }));
 
         // Track card load from URL
         trackCardLoaded("url");
@@ -419,10 +421,13 @@ function HomeContent() {
       return; // Don't allow adding more than 24 items
     }
     const trimmedValue = inputValue.trim();
-    if (trimmedValue && !items.some((item) => item.text === trimmedValue)) {
-      setItems([...items, { text: trimmedValue, isAutoFilled: false }]);
-      setInputValue("");
+    if (!trimmedValue) return;
+    if (items.some((item) => item.text === trimmedValue)) {
+      setDuplicateNotice("That one is already on your card");
+      return;
     }
+    setItems([...items, { text: trimmedValue, isAutoFilled: false }]);
+    setInputValue("");
   };
 
   const removeItem = (index: number) => {
@@ -625,12 +630,12 @@ function HomeContent() {
       setItems(loadedItems);
       setBingoCard(data.items);
       // Handle null customization - if data.customization is null or not an object, use empty object
-      setCustomization({
-        ...customization,
-        ...(data.customization && typeof data.customization === "object"
+      const { firstName: loadedName, ...loadedStyle } =
+        data.customization && typeof data.customization === "object"
           ? data.customization
-          : {}),
-      });
+          : ({} as Record<string, unknown>);
+      setFirstName(cleanFirstName(loadedName));
+      setCustomization({ ...customization, ...loadedStyle });
       setLoadCodeInput("");
 
       // Track card load
@@ -889,7 +894,10 @@ function HomeContent() {
                 placeholder="Run a 5K"
                 aria-label="Add a thing to your card"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setDuplicateNotice("");
+                }}
                 onKeyDown={(e) => e.key === "Enter" && addItem()}
                 className="flex-1"
                 maxLength={MAX_ITEM_LENGTH}
@@ -905,6 +913,12 @@ function HomeContent() {
               </Button>
             </div>
 
+            {duplicateNotice && (
+              <p className="mt-2 font-semibold text-primary" role="alert">
+                {duplicateNotice}
+              </p>
+            )}
+
             <ul className="mt-4 max-h-[28rem] space-y-2 overflow-y-auto">
               {items.length === 0 ? (
                 <li className="py-3 text-muted-foreground">
@@ -914,24 +928,39 @@ function HomeContent() {
                 items.map((item, index) => (
                   <li
                     key={index}
-                    className="flex items-center justify-between gap-1 bg-secondary pl-4"
+                    className={cn(
+                      "flex items-center justify-between gap-1 bg-secondary",
+                      editingIndex === index ? "pl-0" : "pl-4"
+                    )}
                   >
                     {editingIndex === index ? (
                       <>
-                        <Input
+                        <textarea
                           value={editValue}
+                          rows={1}
+                          ref={(el) => {
+                            if (el) {
+                              el.style.height = "auto";
+                              el.style.height = `${el.scrollHeight}px`;
+                            }
+                          }}
                           maxLength={MAX_ITEM_LENGTH}
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
+                              e.preventDefault();
                               updateItem(index);
                             } else if (e.key === "Escape") {
                               cancelEdit();
                             }
                           }}
                           aria-label="Edit item"
-                          className="flex-1 bg-background"
+                          className="min-h-12 min-w-0 flex-1 resize-none overflow-hidden bg-background px-4 py-3 text-base leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                           autoFocus
+                          onFocus={(e) => {
+                            const end = e.currentTarget.value.length;
+                            e.currentTarget.setSelectionRange(end, end);
+                          }}
                         />
                         <Button
                           variant="ghost"
@@ -1611,6 +1640,7 @@ function HomeContent() {
                     aria-label="Your first name (optional)"
                     maxLength={24}
                     autoComplete="given-name"
+                    spellCheck={false}
                   />
                   <Button
                     onClick={handleSaveCard}
