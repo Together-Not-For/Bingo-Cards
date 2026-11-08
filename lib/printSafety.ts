@@ -22,5 +22,13 @@ export function safePrintCustomization(value: Partial<BingoCardCustomization>): 
     cardBackgroundColor: value.cardBackgroundColor === "transparent" ? "transparent" : color(value.cardBackgroundColor, "#ffffff"),
     cellFontSize: number(value.cellFontSize, 1, 0.5, 2),
     cellBorderSize: number(value.cellBorderSize, 3, 1, 8),
+    altCellBackgroundColor:
+      value.altCellBackgroundColor === undefined
+        ? undefined
+        : color(value.altCellBackgroundColor, "#24382c"),
+    altCellTextColor:
+      value.altCellTextColor === undefined
+        ? undefined
+        : color(value.altCellTextColor, "#fffbf5"),
   };
 }

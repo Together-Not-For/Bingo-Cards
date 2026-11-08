@@ -35,7 +35,7 @@ import {
   type Theme,
 } from "@/lib/bingoItemsThemed";
 import { cn } from "@/lib/utils";
-import { cleanFirstName } from "@/lib/cardTitle";
+import { cardFaceTitle, cleanFirstName } from "@/lib/cardTitle";
 import { escapePrintText, safePrintCustomization } from "@/lib/printSafety";
 import {
   AlertTriangle,
@@ -79,6 +79,8 @@ function HomeContent() {
     cardBackgroundColor: "#ffffff",
     cellFontSize: 1.0,
     cellBorderSize: 3,
+    altCellBackgroundColor: "#24382c",
+    altCellTextColor: "#fffbf5",
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedThemes, setSelectedThemes] = useState<Theme[]>(["basic"]);
@@ -319,6 +321,8 @@ function HomeContent() {
         cardBackgroundColor: "#ffffff",
         cellFontSize: 1.0,
         cellBorderSize: 3,
+    altCellBackgroundColor: "#24382c",
+    altCellTextColor: "#fffbf5",
       },
     },
     dark: {
@@ -662,6 +666,7 @@ function HomeContent() {
 
     const printWindow = window.open("", "_blank");
     if (printWindow && bingoCard) {
+      const faceTitle = cardFaceTitle(cleanFirstName(firstName));
       const printCustomization = safePrintCustomization(customization);
       // Calculate font size based on text length and user's font size multiplier
       const getFontSize = (text: string) => {
@@ -697,6 +702,8 @@ function HomeContent() {
                 justify-content: center;
                 align-items: center;
                 min-height: 100vh;
+                /* Lay out at paper width so text is fitted for the printed page, even from a phone */
+                min-width: 660px;
                 padding: 10mm;
                 background: ${
                   printCustomization.cardBackgroundColor === "transparent"
@@ -716,7 +723,6 @@ function HomeContent() {
                 font-weight: bold;
                 margin-bottom: 16px;
                 color: ${printCustomization.titleColor};
-                letter-spacing: 0.15em;
                 font-family: Georgia, "Times New Roman", serif;
               }
               .bingo-grid {
@@ -735,7 +741,7 @@ function HomeContent() {
                 border: ${printCustomization.cellBorderSize || 3}px solid ${
         printCustomization.cellBorderColor
       };
-                border-radius: 8px;
+                border-radius: 4px;
                 background: ${printCustomization.cellBackgroundColor} !important;
                 color: ${printCustomization.cellTextColor} !important;
                 page-break-inside: avoid;
@@ -758,20 +764,39 @@ function HomeContent() {
                 overflow-wrap: break-word;
                 hyphens: auto;
               }
+              .bingo-cell.alt {
+                background: ${
+                  printCustomization.altCellBackgroundColor ||
+                  printCustomization.cellBackgroundColor
+                } !important;
+              }
+              .bingo-cell.alt > span {
+                color: ${
+                  printCustomization.altCellTextColor ||
+                  printCustomization.cellTextColor
+                } !important;
+              }
               .bingo-cell.free {
                 background: ${printCustomization.freeCellBackgroundColor} !important;
               }
               .bingo-cell.free > span {
                 color: ${printCustomization.freeCellTextColor} !important;
-                font-size: 2rem;
+                font-size: 1.5rem;
                 font-weight: bold;
                 padding: 0;
                 white-space: nowrap;
                 overflow: visible;
                 text-overflow: clip;
                 display: flex;
+                flex-direction: column;
+                gap: 6px;
                 align-items: center;
                 justify-content: center;
+              }
+              .bingo-cell.free > span::before {
+                content: "\\2665";
+                font-size: 2rem;
+                line-height: 1;
               }
               .bingo-footer {
                 text-align: center;
@@ -788,6 +813,7 @@ function HomeContent() {
                   padding: 0;
                   margin: 0;
                   min-height: auto;
+                  min-width: 0;
                 }
                 .bingo-container {
                   margin: 0 auto;
@@ -812,13 +838,19 @@ function HomeContent() {
           </head>
           <body>
             <div class="bingo-container">
-              <h1 class="bingo-title">2026 BINGO</h1>
+              <h1 class="bingo-title">${escapePrintText(faceTitle)}</h1>
               <div class="bingo-grid">
                 ${bingoCard
                   .map(
                     (item, index) =>
                       `<div class="bingo-cell ${
                         index === 12 ? "free" : ""
+                      } ${
+                        printCustomization.altCellBackgroundColor &&
+                        index !== 12 &&
+                        (Math.floor(index / 5) + (index % 5)) % 2 === 1
+                          ? "alt"
+                          : ""
                       }"><span style="${
                         index !== 12
                           ? `font-size: ${getFontSize(item)}; color: ${
@@ -829,7 +861,7 @@ function HomeContent() {
                   )
                   .join("")}
               </div>
-              <div class="bingo-footer">Generated by Together, Not For</div>
+              <div class="bingo-footer">Made by Together, Not For</div>
             </div>
             <script>
               function fitCells() {
@@ -1175,7 +1207,7 @@ function HomeContent() {
                   Fill in {24 - items.length} for me
                 </Button>
                 <p className="-mt-1 text-muted-foreground">
-                  Not AI. It picks at random from a list of goals we saved
+                  Not AI. Picked at random from goals we saved
                 </p>
               </div>
             )}
@@ -1203,6 +1235,7 @@ function HomeContent() {
                   <div ref={cardRef} className="mx-auto w-full max-w-md p-2 sm:p-4">
                     <BingoCard
                       items={bingoCard}
+                      title={cardFaceTitle(cleanFirstName(firstName))}
                       customization={customization}
                     />
                   </div>

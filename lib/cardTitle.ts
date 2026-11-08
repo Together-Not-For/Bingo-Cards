@@ -10,3 +10,7 @@ export function cleanFirstName(value: unknown): string {
 export function cardTitle(firstName: string): string {
   return firstName ? `${firstName}'s 2026 bingo` : "A 2026 bingo card";
 }
+
+export function cardFaceTitle(firstName: string): string {
+  return firstName ? `${firstName}'s 2026 bingo` : "2026 Bingo";
+}
