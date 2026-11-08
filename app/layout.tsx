@@ -1,70 +1,52 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Figtree } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const figtree = Figtree({ subsets: ["latin"] });
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL || "https://bingo.benjidevelops.com";
+
+export const viewport: Viewport = {
+  themeColor: "#24382C",
+};
 
 export const metadata: Metadata = {
-  title: "2026 Bingo Card Generator",
-  description: "Create and print custom bingo cards for 2026",
+  title: "Together, Not For Bingo",
+  description:
+    "Pick 24 things you want to do in 2026, make a bingo card, and send it to your friends",
   keywords: [
-    "bingo card generator",
-    "bingo cards",
-    "custom bingo cards",
-    "printable bingo cards",
-    "2026 bingo",
-    "bingo card maker",
-    "create bingo cards",
-    "bingo game",
-    "bingo template",
-    "free bingo cards",
-    "online bingo generator",
-    "bingo card creator",
-    "print bingo cards",
-    "bingo card printer",
-    "customizable bingo",
+    "2026 goals bingo",
+    "resolution bingo",
+    "new year goals bingo card",
+    "printable bingo card",
+    "custom bingo card maker",
   ],
   authors: [{ name: "Together, Not For" }],
   creator: "Together, Not For",
   publisher: "Together, Not For",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://bingo-cards-delta.vercel.app"
-  ),
+  metadataBase: new URL(siteUrl),
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "2026 Bingo Card Generator",
+    title: "Together, Not For Bingo",
     description:
-      "Create and print custom bingo cards for 2026. Add your items, generate your card, and start playing!",
+      "Pick 24 things you want to do in 2026, make a bingo card, and send it to your friends",
     type: "website",
     url: "/",
-    siteName: "2026 Bingo Card Generator",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "2026 Bingo Card Generator",
-      },
-    ],
+    siteName: "Together, Not For Bingo",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "2026 Bingo Card Generator",
-    description: "Create and print custom bingo cards for 2026",
-    images: ["/og-image.png"],
+    title: "Together, Not For Bingo",
+    description:
+      "Pick 24 things you want to do in 2026, make a bingo card, and send it to your friends",
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
   },
 };
 
@@ -76,7 +58,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={inter.className}>
+      <body className={figtree.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
