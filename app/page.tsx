@@ -35,11 +35,14 @@ import {
   type Theme,
 } from "@/lib/bingoItemsThemed";
 import { cn } from "@/lib/utils";
+import { escapePrintText, safePrintCustomization } from "@/lib/printSafety";
 import {
   AlertTriangle,
   Check,
+  ChevronDown,
   Copy,
   ExternalLink,
+  Info,
   Palette,
   Pencil,
   Plus,
@@ -66,13 +69,13 @@ function HomeContent() {
   const [bingoCard, setBingoCard] = useState<string[] | null>(null);
   const [customization, setCustomization] = useState<BingoCardCustomization>({
     cellBackgroundColor: "#ffffff",
-    cellTextColor: "#111827",
-    cellBorderColor: "#1f2937",
-    freeCellBackgroundColor: "#fbbf24",
-    freeCellTextColor: "#ffffff",
-    titleColor: "#111827",
-    footerColor: "#6b7280",
-    cardBackgroundColor: "transparent",
+    cellTextColor: "#24382c",
+    cellBorderColor: "#24382c",
+    freeCellBackgroundColor: "#ae5128",
+    freeCellTextColor: "#fffbf5",
+    titleColor: "#24382c",
+    footerColor: "#24382c",
+    cardBackgroundColor: "#ffffff",
     cellFontSize: 1.0,
     cellBorderSize: 3,
   });
@@ -91,6 +94,9 @@ function HomeContent() {
   // New state for save/share functionality
   const [savedCardCode, setSavedCardCode] = useState<string | null>(null);
   const [savingCard, setSavingCard] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [showStyleInfo, setShowStyleInfo] = useState(false);
+  const styleDetailsRef = useRef<HTMLDetailsElement>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [loadCodeInput, setLoadCodeInput] = useState("");
@@ -302,13 +308,13 @@ function HomeContent() {
       name: "Classic",
       colors: {
         cellBackgroundColor: "#ffffff",
-        cellTextColor: "#111827",
-        cellBorderColor: "#1f2937",
-        freeCellBackgroundColor: "#fbbf24",
-        freeCellTextColor: "#ffffff",
-        titleColor: "#111827",
-        footerColor: "#6b7280",
-        cardBackgroundColor: "transparent",
+        cellTextColor: "#24382c",
+        cellBorderColor: "#24382c",
+        freeCellBackgroundColor: "#ae5128",
+        freeCellTextColor: "#fffbf5",
+        titleColor: "#24382c",
+        footerColor: "#24382c",
+        cardBackgroundColor: "#ffffff",
         cellFontSize: 1.0,
         cellBorderSize: 3,
       },
@@ -405,6 +411,8 @@ function HomeContent() {
       },
     },
   };
+
+  const MAX_ITEM_LENGTH = 60;
 
   const addItem = () => {
     if (items.length >= 24) {
@@ -556,6 +564,7 @@ function HomeContent() {
         body: JSON.stringify({
           items: bingoCard,
           customization,
+          firstName,
         }),
       });
 
@@ -648,9 +657,10 @@ function HomeContent() {
 
     const printWindow = window.open("", "_blank");
     if (printWindow && bingoCard) {
+      const printCustomization = safePrintCustomization(customization);
       // Calculate font size based on text length and user's font size multiplier
       const getFontSize = (text: string) => {
-        const fontSizeMultiplier = customization.cellFontSize || 1.0;
+        const fontSizeMultiplier = printCustomization.cellFontSize || 1.0;
         const length = text.length;
         let baseSize = 1.0; // Base size in rem
 
@@ -684,9 +694,9 @@ function HomeContent() {
                 min-height: 100vh;
                 padding: 10mm;
                 background: ${
-                  customization.cardBackgroundColor === "transparent"
+                  printCustomization.cardBackgroundColor === "transparent"
                     ? "white"
-                    : customization.cardBackgroundColor
+                    : printCustomization.cardBackgroundColor
                 };
               }
               .bingo-container {
@@ -700,7 +710,7 @@ function HomeContent() {
                 font-size: 2.5rem;
                 font-weight: bold;
                 margin-bottom: 16px;
-                color: ${customization.titleColor};
+                color: ${printCustomization.titleColor};
                 letter-spacing: 0.15em;
                 font-family: Georgia, "Times New Roman", serif;
               }
@@ -717,12 +727,12 @@ function HomeContent() {
                 height: 0;
                 padding-bottom: 100%;
                 position: relative;
-                border: ${customization.cellBorderSize || 3}px solid ${
-        customization.cellBorderColor
+                border: ${printCustomization.cellBorderSize || 3}px solid ${
+        printCustomization.cellBorderColor
       };
                 border-radius: 8px;
-                background: ${customization.cellBackgroundColor} !important;
-                color: ${customization.cellTextColor} !important;
+                background: ${printCustomization.cellBackgroundColor} !important;
+                color: ${printCustomization.cellTextColor} !important;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
@@ -740,15 +750,14 @@ function HomeContent() {
                 font-weight: 500;
                 overflow: hidden;
                 line-height: 1.3;
-                word-break: normal;
-                overflow-wrap: normal;
-                hyphens: none;
+                overflow-wrap: break-word;
+                hyphens: auto;
               }
               .bingo-cell.free {
-                background: ${customization.freeCellBackgroundColor} !important;
+                background: ${printCustomization.freeCellBackgroundColor} !important;
               }
               .bingo-cell.free > span {
-                color: ${customization.freeCellTextColor} !important;
+                color: ${printCustomization.freeCellTextColor} !important;
                 font-size: 2rem;
                 font-weight: bold;
                 padding: 0;
@@ -761,7 +770,7 @@ function HomeContent() {
               }
               .bingo-footer {
                 text-align: center;
-                color: ${customization.footerColor};
+                color: ${printCustomization.footerColor};
                 font-size: 0.875rem;
                 margin-top: 16px;
               }
@@ -783,7 +792,7 @@ function HomeContent() {
                   gap: 8px;
                 }
                 .bingo-cell {
-                  border-width: ${customization.cellBorderSize || 3}px;
+                  border-width: ${printCustomization.cellBorderSize || 3}px;
                 }
                 .bingo-cell > span {
                   padding: 12px;
@@ -808,17 +817,27 @@ function HomeContent() {
                       }"><span style="${
                         index !== 12
                           ? `font-size: ${getFontSize(item)}; color: ${
-                              customization.cellTextColor
+                              printCustomization.cellTextColor
                             };`
                           : ""
-                      }">${item}</span></div>`
+                      }">${escapePrintText(item).replace(/\//g, "/&#8203;")}</span></div>`
                   )
                   .join("")}
               </div>
               <div class="bingo-footer">Generated by Together, Not For</div>
             </div>
             <script>
+              function fitCells() {
+                document.querySelectorAll(".bingo-cell > span").forEach(function(cell) {
+                  var size = parseFloat(getComputedStyle(cell).fontSize);
+                  while (cell.scrollHeight > cell.clientHeight && size > 5) {
+                    size -= 0.5;
+                    cell.style.fontSize = size + "px";
+                  }
+                });
+              }
               window.onload = function() {
+                fitCells();
                 setTimeout(function() {
                   window.print();
                 }, 250);
@@ -832,907 +851,851 @@ function HomeContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Landing Page Hero Section */}
-      <div className="container mx-auto px-4 py-8 md:py-10">
-        <div className="flex justify-end mb-4">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-4 sm:px-6">
+        <header className="flex justify-end">
           <ThemeToggle />
-        </div>
-        <div className="text-center mb-6">
-          <div className="inline-block mb-4 px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-semibold">
-            🎯 2026 Edition
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4 pb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-            2026 Bingo Card Generator
+        </header>
+
+        <section className="mx-auto mt-5 max-w-2xl sm:mt-8">
+          <h1 className="text-4xl font-bold leading-tight text-primary sm:text-6xl">
+            Let&apos;s make your 2026 bingo card
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-4">
-            Create custom, printable bingo cards for 2026. Add your items,
-            generate your card, and start playing!
+          <p className="mt-4 text-lg text-muted-foreground">
+            Pick 24 things you want to do this year. Print it, or send it to the
+            group chat
           </p>
-          <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm">
-              ✨ Custom Items
-            </span>
-            <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm">
-              🎲 Randomize
-            </span>
-            <span className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full shadow-sm">
-              🖨️ Print Ready
-            </span>
-          </div>
-        </div>
+        </section>
 
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Load Existing Card Section */}
-          <Card className="shadow-lg border-2 border-purple-300 dark:border-purple-500">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Search className="h-5 w-5" />
-                Load an Existing Card
-              </CardTitle>
-              <CardDescription>
-                Enter a card code to view or edit a previously saved bingo card
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter 6-character code (e.g., ABC123)"
-                  value={loadCodeInput}
-                  onChange={(e) =>
-                    setLoadCodeInput(e.target.value.toUpperCase())
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && handleLoadCard()}
-                  className="flex-1 font-mono"
-                  maxLength={6}
-                />
-                <Button
-                  onClick={handleLoadCard}
-                  disabled={loadingCard || loadCodeInput.length !== 6}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold shadow-lg"
-                >
-                  {loadingCard ? (
-                    "Loading..."
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Load Card
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <details className="group mx-auto mt-4 max-w-2xl">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-xl font-bold text-primary [&::-webkit-details-marker]:hidden">
+            How it works
+            <ChevronDown className="h-6 w-6 transition-transform group-open:rotate-180" />
+          </summary>
+          <p className="mt-2 text-lg">
+            Pick 24 things you want to do this year, or let us fill in some.
+            Make your card, then print it or save it and send the link to the
+            group chat. Cross off squares as the year goes
+          </p>
+        </details>
 
-          {/* Item Management Card */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl">Manage Your Items</CardTitle>
-              <CardDescription>
-                Add exactly 24 items to create your bingo card
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter an item..."
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addItem()}
-                  className="flex-1"
-                  disabled={items.length >= 24}
-                />
-                <Button
-                  onClick={addItem}
-                  size="icon"
-                  disabled={items.length >= 24}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+        <div className="mt-6 space-y-10">
+          <section className="mx-auto max-w-2xl" aria-labelledby="goals-heading">
+            <h2 id="goals-heading" className="text-2xl font-bold text-primary">
+              Your 24 things
+            </h2>
+            <div className="mt-5 flex gap-2">
+              <Input
+                placeholder="Run a 5K"
+                aria-label="Add a thing to your card"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addItem()}
+                className="flex-1"
+                maxLength={MAX_ITEM_LENGTH}
+                disabled={items.length >= 24}
+              />
+              <Button
+                onClick={addItem}
+                size="icon"
+                aria-label="Add to your card"
+                disabled={items.length >= 24}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
 
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No items yet. Add some items to get started!
-                  </p>
-                ) : (
-                  items.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      {editingIndex === index ? (
-                        <>
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                updateItem(index);
-                              } else if (e.key === "Escape") {
-                                cancelEdit();
-                              }
-                            }}
-                            className="flex-1 mr-2"
-                            autoFocus
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => updateItem(index)}
-                            className="h-8 w-8 text-green-600 hover:text-green-700"
-                            disabled={
-                              !editValue.trim() ||
-                              items.some(
-                                (item, i) =>
-                                  i !== index && item.text === editValue.trim()
-                              )
-                            }
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={cancelEdit}
-                            className="h-8 w-8 text-gray-500 hover:text-gray-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex items-center gap-2 flex-1">
-                            <span className="text-sm font-medium">
-                              {item.text}
-                            </span>
-                            {item.isAutoFilled && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                Auto-filled
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => editItem(index)}
-                              className="h-8 w-8 text-blue-500 hover:text-blue-700"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeItem(index)}
-                              className="h-8 w-8 text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    Items:{" "}
-                    <span
-                      className={cn(
-                        "font-semibold",
-                        items.length === 24
-                          ? "text-green-600"
-                          : "text-orange-600"
-                      )}
-                    >
-                      {items.length} / 24
-                    </span>
-                  </p>
-                  {items.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setItems([])}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Clear All
-                    </Button>
-                  )}
-                </div>
-                {items.length < 24 && (
-                  <div className="space-y-3 mb-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium">
-                          Choose theme(s) for auto-fill:
-                        </label>
-                        <div className="flex gap-2">
-                          {selectedThemes.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedThemes(["basic"]);
-                                trackThemeSelected(["basic"]);
-                              }}
-                              className="text-xs h-auto py-1 px-2 text-red-500 hover:text-red-700"
-                            >
-                              Clear All
-                            </Button>
-                          )}
-                          {selectedThemes.length < SELECTABLE_THEMES.length && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                // Check if spicy is in the themes to select and user isn't verified
-                                const willSelectSpicy =
-                                  SELECTABLE_THEMES.includes("spicy") &&
-                                  !selectedThemes.includes("spicy");
-                                if (willSelectSpicy && !isAgeVerified) {
-                                  setPendingSpicySelection(true);
-                                  setWasSelectingAll(true);
-                                  setShowAgeGate(true);
-                                } else {
-                                  const allThemes = [...SELECTABLE_THEMES];
-                                  setSelectedThemes(allThemes);
-                                  trackThemeSelected(allThemes);
-                                }
-                              }}
-                              className="text-xs h-auto py-1 px-2"
-                            >
-                              Select All
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {SELECTABLE_THEMES.map((theme) => {
-                          const isSelected = selectedThemes.includes(theme);
-                          return (
-                            <Button
-                              key={theme}
-                              variant={isSelected ? "default" : "outline"}
-                              onClick={() => {
-                                if (isSelected) {
-                                  // Deselect if already selected (but keep at least one)
-                                  if (selectedThemes.length > 1) {
-                                    const newThemes = selectedThemes.filter(
-                                      (t) => t !== theme
-                                    );
-                                    setSelectedThemes(newThemes);
-                                    trackThemeSelected(newThemes);
-                                  }
-                                } else {
-                                  // Check if trying to select spicy theme
-                                  if (theme === "spicy") {
-                                    if (!isAgeVerified) {
-                                      setPendingSpicySelection(true);
-                                      setWasSelectingAll(false); // Reset flag for individual selection
-                                      setShowAgeGate(true);
-                                      return;
-                                    }
-                                  }
-                                  // Add to selection
-                                  const newThemes = [...selectedThemes, theme];
-                                  setSelectedThemes(newThemes);
-                                  trackThemeSelected(newThemes);
-                                }
-                              }}
-                              className="h-auto py-2 px-3 text-xs capitalize"
-                              size="sm"
-                            >
-                              {isSelected && "✓ "}
-                              {THEME_LABELS[theme]}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {selectedThemes.includes("spicy") && (
-                      <div className="space-y-2">
-                        <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-3">
-                          <div className="flex items-start gap-2 mb-3">
-                            <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-semibold text-orange-800 dark:text-orange-200 mb-1">
-                                ⚠️ Warning: Spicy Theme Contains Sexual Content
-                              </p>
-                              <p className="text-xs text-orange-700 dark:text-orange-300">
-                                The Spicy theme includes adult/sexual content.
-                                Only select this theme if you are comfortable
-                                with mature content.
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2 block">
-                              Select Spicy Level:
-                            </label>
-                            <div className="flex gap-2">
-                              {[1, 2, 3].map((level) => (
-                                <Button
-                                  key={level}
-                                  variant={
-                                    spicyLevel === level ? "default" : "outline"
-                                  }
-                                  onClick={() =>
-                                    setSpicyLevel(level as 1 | 2 | 3)
-                                  }
-                                  className={cn(
-                                    "flex-1",
-                                    spicyLevel === level
-                                      ? "bg-orange-600 hover:bg-orange-700 text-white"
-                                      : "border-orange-300 dark:border-orange-700"
-                                  )}
-                                  size="sm"
-                                >
-                                  Level {level}
-                                </Button>
-                              ))}
-                            </div>
-                            <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
-                              Level 1: Moderate | Level 2: More Explicit | Level
-                              3: Very Explicit
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <Button
-                      onClick={autoFillItems}
-                      variant="outline"
-                      className="w-full"
-                      size="lg"
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Auto-fill {24 - items.length} item
-                      {24 - items.length === 1 ? "" : "s"} from{" "}
-                      {selectedThemes.length === 1
-                        ? THEME_LABELS[selectedThemes[0]].toLowerCase()
-                        : `${selectedThemes.length} themes`}
-                    </Button>
-                  </div>
-                )}
-                {items.length >= 24 && (
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium text-center mb-4">
-                    ✓ You have exactly 24 items!
-                  </p>
-                )}
-                <Button
-                  onClick={generateBingoCard}
-                  disabled={items.length !== 24}
-                  className={cn(
-                    "w-full text-lg font-bold shadow-lg transition-all",
-                    items.length === 24
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-14"
-                      : "h-12"
-                  )}
-                  size="lg"
-                >
-                  {items.length < 24
-                    ? `Add ${24 - items.length} more item${
-                        24 - items.length === 1 ? "" : "s"
-                      } to generate`
-                    : items.length > 24
-                    ? `Remove ${items.length - 24} item${
-                        items.length - 24 === 1 ? "" : "s"
-                      } to generate`
-                    : "🎯 Generate Bingo Card"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Preview and Customization Cards Container */}
-          {bingoCard && (
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-              {/* Preview Card */}
-              <Card className="shadow-lg flex-1" ref={previewRef}>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Preview & Actions</CardTitle>
-                  <CardDescription>
-                    Preview your bingo card and customize it
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-inner w-full overflow-auto">
-                    <div
-                      ref={cardRef}
-                      className="min-w-[280px] max-w-full mx-auto"
-                    >
-                      <BingoCard
-                        items={bingoCard}
-                        customization={{
-                          ...customization,
-                          cellFontSize: customization.cellFontSize * 0.75, // Reduce font size by 25% for preview
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      onClick={randomizeCard}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <Shuffle className="h-4 w-4 mr-2" />
-                      Randomize
-                    </Button>
-                    <Button
-                      onClick={handleSaveCard}
-                      variant="outline"
-                      className="flex-1 border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-950"
-                      disabled={savingCard}
-                    >
-                      {savingCard ? (
-                        "Saving..."
-                      ) : (
-                        <>
-                          <Share2 className="h-4 w-4 mr-2" />
-                          Save & Share
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handlePrint}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Printer className="h-4 w-4 mr-2" />
-                      Print Card
-                    </Button>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
-                    <p className="text-xs text-blue-800 dark:text-blue-200 font-medium mb-1">
-                      📸 To Save as Image:
-                    </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      Take a screenshot of the bingo card above using your
-                      system&rsquo;s screenshot tool (e.g., Cmd+Shift+4 on Mac,
-                      Windows+Shift+S on Windows, or use your browser&rsquo;s
-                      developer tools).
-                    </p>
-                  </div>
-                  <p className="text-xs text-center text-muted-foreground mt-2">
-                    Click &ldquo;Randomize&rdquo; to shuffle the items, or
-                    &ldquo;Print Card&rdquo; to print
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Customization Card */}
-              <Card className="shadow-lg lg:flex-1 lg:max-w-md">
-                <CardHeader className="lg:pb-3">
-                  <CardTitle className="text-xl lg:text-2xl">
-                    Customize Your Card
-                  </CardTitle>
-                  <CardDescription className="text-sm lg:text-base">
-                    Change colors and styling to match your preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 lg:space-y-4">
-                  {/* Presets */}
-                  <div>
-                    <label className="text-xs lg:text-sm font-medium mb-1.5 lg:mb-2 block">
-                      Color Presets
-                    </label>
-                    <div className="grid grid-cols-3 lg:grid-cols-3 gap-1.5 lg:gap-2">
-                      {Object.entries(presets).map(([key, preset]) => (
-                        <Button
-                          key={key}
-                          variant="outline"
-                          onClick={() => {
-                            if (key === "random") {
-                              // Generate new random colors each time
-                              setCustomization(generateRandomPreset());
-                            } else {
-                              setCustomization(preset.colors);
+            <ul className="mt-4 max-h-[28rem] space-y-2 overflow-y-auto">
+              {items.length === 0 ? (
+                <li className="py-3 text-muted-foreground">
+                  Nothing yet. Add one above, or let us fill some in
+                </li>
+              ) : (
+                items.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-center justify-between gap-1 bg-secondary pl-4"
+                  >
+                    {editingIndex === index ? (
+                      <>
+                        <Input
+                          value={editValue}
+                          maxLength={MAX_ITEM_LENGTH}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              updateItem(index);
+                            } else if (e.key === "Escape") {
+                              cancelEdit();
                             }
                           }}
-                          className="h-auto py-2 lg:py-3 flex flex-col items-center gap-0.5 lg:gap-1"
+                          aria-label="Edit item"
+                          className="flex-1 bg-background"
+                          autoFocus
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Save change"
+                          onClick={() => updateItem(index)}
+                          disabled={
+                            !editValue.trim() ||
+                            items.some(
+                              (item, i) =>
+                                i !== index && item.text === editValue.trim()
+                            )
+                          }
                         >
-                          <div className="flex gap-1 items-center justify-center">
-                            <div
-                              className="w-4 h-4 rounded flex-shrink-0 border"
-                              style={{
-                                backgroundColor:
-                                  preset.colors.cellBackgroundColor,
-                                borderColor:
-                                  preset.colors.cellBackgroundColor ===
-                                    "#ffffff" ||
-                                  preset.colors.cellBackgroundColor ===
-                                    "#fef3c7" ||
-                                  preset.colors.cellBackgroundColor ===
-                                    "#e0f2fe" ||
-                                  preset.colors.cellBackgroundColor ===
-                                    "#dcfce7" ||
-                                  preset.colors.cellBackgroundColor ===
-                                    "#fee2e2"
-                                    ? "#e5e7eb"
-                                    : preset.colors.cellBorderColor,
-                                width: "16px",
-                                height: "16px",
-                                minWidth: "16px",
-                                minHeight: "16px",
-                              }}
+                          <Check className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Cancel edit"
+                          onClick={cancelEdit}
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex flex-1 items-center gap-2 py-3">
+                          {item.text}
+                          {item.isAutoFilled && (
+                            <Sparkles
+                              className="h-4 w-4 shrink-0 text-accent"
+                              aria-label="Auto-filled"
                             />
-                            <div
-                              className="w-4 h-4 rounded flex-shrink-0 border"
-                              style={{
-                                backgroundColor:
-                                  preset.colors.freeCellBackgroundColor,
-                                borderColor:
-                                  preset.colors.freeCellBackgroundColor ===
-                                    "#ffffff" ||
-                                  preset.colors.freeCellBackgroundColor ===
-                                    "#fef3c7" ||
-                                  preset.colors.freeCellBackgroundColor ===
-                                    "#e0f2fe" ||
-                                  preset.colors.freeCellBackgroundColor ===
-                                    "#dcfce7" ||
-                                  preset.colors.freeCellBackgroundColor ===
-                                    "#fee2e2"
-                                    ? "#e5e7eb"
-                                    : preset.colors.freeCellBackgroundColor,
-                                width: "16px",
-                                height: "16px",
-                                minWidth: "16px",
-                                minHeight: "16px",
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs">{preset.name}</span>
+                          )}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${item.text}`}
+                          onClick={() => editItem(index)}
+                        >
+                          <Pencil className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove ${item.text}`}
+                          onClick={() => removeItem(index)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </>
+                    )}
+                  </li>
+                ))
+              )}
+            </ul>
+
+            <div className="mt-3 flex items-center justify-between">
+              <p className="text-lg font-bold" aria-live="polite">
+                {items.length} of 24
+              </p>
+              {items.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setItems([])}
+                  className="text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear all
+                </Button>
+              )}
+            </div>
+
+            {items.length < 24 && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold">Need ideas? Pull from</h3>
+                    <div className="flex">
+                      {selectedThemes.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedThemes(["basic"]);
+                            trackThemeSelected(["basic"]);
+                          }}
+                        >
+                          Reset
+                        </Button>
+                      )}
+                      {selectedThemes.length < SELECTABLE_THEMES.length && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const willSelectSpicy =
+                              SELECTABLE_THEMES.includes("spicy") &&
+                              !selectedThemes.includes("spicy");
+                            if (willSelectSpicy && !isAgeVerified) {
+                              setPendingSpicySelection(true);
+                              setWasSelectingAll(true);
+                              setShowAgeGate(true);
+                            } else {
+                              const allThemes = [...SELECTABLE_THEMES];
+                              setSelectedThemes(allThemes);
+                              trackThemeSelected(allThemes);
+                            }
+                          }}
+                        >
+                          Select all
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {SELECTABLE_THEMES.map((theme) => {
+                      const isSelected = selectedThemes.includes(theme);
+                      return (
+                        <Button
+                          key={theme}
+                          variant={isSelected ? "default" : "outline"}
+                          aria-pressed={isSelected}
+                          onClick={() => {
+                            if (isSelected) {
+                              if (selectedThemes.length > 1) {
+                                const newThemes = selectedThemes.filter(
+                                  (t) => t !== theme
+                                );
+                                setSelectedThemes(newThemes);
+                                trackThemeSelected(newThemes);
+                              }
+                            } else {
+                              if (theme === "spicy") {
+                                if (!isAgeVerified) {
+                                  setPendingSpicySelection(true);
+                                  setWasSelectingAll(false);
+                                  setShowAgeGate(true);
+                                  return;
+                                }
+                              }
+                              const newThemes = [...selectedThemes, theme];
+                              setSelectedThemes(newThemes);
+                              trackThemeSelected(newThemes);
+                            }
+                          }}
+                          size="sm"
+                          className="justify-start"
+                        >
+                          {isSelected && <Check className="mr-2 h-4 w-4" />}
+                          {THEME_LABELS[theme]}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedThemes.includes("spicy") && (
+                  <div className="bg-secondary p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                      <p>
+                        Spicy is adult content. Only pick it if you and your
+                        friends are comfortable with that
+                      </p>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      {[1, 2, 3].map((level) => (
+                        <Button
+                          key={level}
+                          variant={spicyLevel === level ? "default" : "outline"}
+                          aria-pressed={spicyLevel === level}
+                          onClick={() => setSpicyLevel(level as 1 | 2 | 3)}
+                          className="flex-1 bg-background"
+                          size="sm"
+                        >
+                          Level {level}
                         </Button>
                       ))}
                     </div>
+                    <p className="mt-3 text-muted-foreground">
+                      Level 1 is moderate, level 3 is very explicit
+                    </p>
                   </div>
+                )}
 
-                  {/* Font Size and Border Size Controls */}
-                  <div className="space-y-3 lg:space-y-4 pt-2 border-t">
-                    <div className="space-y-1.5 lg:space-y-2">
-                      <label className="text-xs lg:text-sm font-medium">
-                        Font Size: {customization.cellFontSize.toFixed(1)}x
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="range"
-                          min="0.5"
-                          max="2.0"
-                          step="0.1"
-                          value={customization.cellFontSize}
-                          onChange={(e) =>
-                            setCustomization({
-                              ...customization,
-                              cellFontSize: parseFloat(e.target.value),
-                            })
+                <Button
+                  onClick={autoFillItems}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Fill in {24 - items.length} for me
+                </Button>
+              </div>
+            )}
+
+            <Button
+              onClick={generateBingoCard}
+              disabled={items.length !== 24}
+              className={cn(
+                "mt-3 w-full",
+                items.length === 24 && "bg-accent text-accent-foreground"
+              )}
+              size="lg"
+            >
+              {items.length < 24
+                ? `Add ${24 - items.length} more ${
+                    24 - items.length === 1 ? "thing" : "things"
+                  } to make your card`
+                : items.length > 24
+                ? `Remove ${items.length - 24} ${
+                    items.length - 24 === 1 ? "thing" : "things"
+                  } to make your card`
+                : "Make my card"}
+            </Button>
+          </section>
+
+          {/* Preview and Customization Container */}
+          {bingoCard && (
+            <div className="mx-auto max-w-2xl">
+              {/* Preview */}
+              <section aria-labelledby="card-heading" ref={previewRef}>
+                <h2 id="card-heading" className="text-2xl font-bold text-primary">
+                  Your card
+                </h2>
+                <div className="mt-5 w-full overflow-hidden bg-white">
+                  <div ref={cardRef} className="mx-auto w-full max-w-md p-2 sm:p-4">
+                    <BingoCard
+                      items={bingoCard}
+                      customization={customization}
+                    />
+                  </div>
+                </div>
+                <details className="group mt-6" ref={styleDetailsRef}>
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-xl font-bold text-primary [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-2">
+                      Style your card
+                      <button
+                        type="button"
+                        aria-label="What does style do?"
+                        aria-expanded={showStyleInfo}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!showStyleInfo && styleDetailsRef.current) {
+                            styleDetailsRef.current.open = true;
                           }
-                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <span className="text-xs lg:text-sm text-muted-foreground min-w-[3rem] text-right">
-                          {customization.cellFontSize.toFixed(1)}x
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 lg:space-y-2">
-                      <label className="text-xs lg:text-sm font-medium">
-                        Border Size: {customization.cellBorderSize}px
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="range"
-                          min="1"
-                          max="8"
-                          step="1"
-                          value={customization.cellBorderSize}
-                          onChange={(e) =>
-                            setCustomization({
-                              ...customization,
-                              cellBorderSize: parseInt(e.target.value),
-                            })
-                          }
-                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <span className="text-xs lg:text-sm text-muted-foreground min-w-[3rem] text-right">
-                          {customization.cellBorderSize}px
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Advanced Toggle */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex items-center gap-1.5 lg:gap-2">
-                      <Palette className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
-                      <label className="text-xs lg:text-sm font-medium">
-                        Advanced Color Options
-                      </label>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowAdvanced(!showAdvanced)}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                        showAdvanced ? "bg-blue-600" : "bg-gray-200"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                          showAdvanced ? "translate-x-6" : "translate-x-1"
-                        )}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Advanced Color Options */}
-                  {showAdvanced && (
-                    <>
-                      <div className="grid grid-cols-2 gap-2 lg:gap-4 pt-3 lg:pt-4 border-t">
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            Cell Background
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.cellBackgroundColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cellBackgroundColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.cellBackgroundColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cellBackgroundColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#ffffff"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            Cell Text
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.cellTextColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cellTextColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.cellTextColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cellTextColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#111827"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            Cell Border
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.cellBorderColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cellBorderColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.cellBorderColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cellBorderColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#1f2937"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            FREE Background
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.freeCellBackgroundColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  freeCellBackgroundColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.freeCellBackgroundColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  freeCellBackgroundColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#fbbf24"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            FREE Text
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.freeCellTextColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  freeCellTextColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.freeCellTextColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  freeCellTextColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#ffffff"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            Title Color
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.titleColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  titleColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.titleColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  titleColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#111827"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            Footer Color
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={customization.footerColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  footerColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.footerColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  footerColor: e.target.value,
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="#6b7280"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5 lg:space-y-2">
-                          <label className="text-xs lg:text-sm font-medium">
-                            Card Background
-                          </label>
-                          <div className="flex gap-1.5 lg:gap-2">
-                            <input
-                              type="color"
-                              value={
-                                customization.cardBackgroundColor ===
-                                "transparent"
-                                  ? "#ffffff"
-                                  : customization.cardBackgroundColor
-                              }
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cardBackgroundColor: e.target.value,
-                                })
-                              }
-                              className="h-8 w-16 lg:h-10 lg:w-20 rounded border border-gray-300 cursor-pointer"
-                            />
-                            <Input
-                              value={customization.cardBackgroundColor}
-                              onChange={(e) =>
-                                setCustomization({
-                                  ...customization,
-                                  cardBackgroundColor:
-                                    e.target.value || "transparent",
-                                })
-                              }
-                              className="flex-1"
-                              placeholder="transparent"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setCustomization(presets.classic.colors);
-                          setShowAdvanced(false);
+                          setShowStyleInfo(!showStyleInfo);
                         }}
-                        className="w-full mt-4"
+                        className="flex h-11 w-11 items-center justify-center"
                       >
-                        Reset to Classic
-                      </Button>
-                    </>
+                        <Info className="h-5 w-5" />
+                      </button>
+                    </span>
+                    <ChevronDown className="h-6 w-6 transition-transform group-open:rotate-180" />
+                  </summary>
+                  {showStyleInfo && (
+                    <p className="mb-4">
+                      A style recolors the whole card. For example, Ocean makes
+                      the squares blue and Forest makes them green. You can
+                      still change any color under More color options
+                    </p>
                   )}
-                </CardContent>
-              </Card>
+                  <div className="mt-2">
+              <Card>
+                    <CardContent className="space-y-8">
+                      {/* Presets */}
+                      <div>
+                        <label className="text-lg font-bold mb-3 block">
+                          Style
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {Object.entries(presets).map(([key, preset]) => (
+                            <Button
+                              key={key}
+                              variant="outline"
+                              onClick={() => {
+                                if (key === "random") {
+                                  // Generate new random colors each time
+                                  setCustomization(generateRandomPreset());
+                                } else {
+                                  setCustomization(preset.colors);
+                                }
+                              }}
+                              className="h-auto py-3 flex flex-col items-center gap-1"
+                            >
+                              <div className="flex gap-1 items-center justify-center">
+                                <div
+                                  className="w-4 h-4 rounded flex-shrink-0 border"
+                                  style={{
+                                    backgroundColor:
+                                      preset.colors.cellBackgroundColor,
+                                    borderColor:
+                                      preset.colors.cellBackgroundColor ===
+                                        "#ffffff" ||
+                                      preset.colors.cellBackgroundColor ===
+                                        "#fef3c7" ||
+                                      preset.colors.cellBackgroundColor ===
+                                        "#e0f2fe" ||
+                                      preset.colors.cellBackgroundColor ===
+                                        "#dcfce7" ||
+                                      preset.colors.cellBackgroundColor ===
+                                        "#fee2e2"
+                                        ? "#e5e7eb"
+                                        : preset.colors.cellBorderColor,
+                                    width: "16px",
+                                    height: "16px",
+                                    minWidth: "16px",
+                                    minHeight: "16px",
+                                  }}
+                                />
+                                <div
+                                  className="w-4 h-4 rounded flex-shrink-0 border"
+                                  style={{
+                                    backgroundColor:
+                                      preset.colors.freeCellBackgroundColor,
+                                    borderColor:
+                                      preset.colors.freeCellBackgroundColor ===
+                                        "#ffffff" ||
+                                      preset.colors.freeCellBackgroundColor ===
+                                        "#fef3c7" ||
+                                      preset.colors.freeCellBackgroundColor ===
+                                        "#e0f2fe" ||
+                                      preset.colors.freeCellBackgroundColor ===
+                                        "#dcfce7" ||
+                                      preset.colors.freeCellBackgroundColor ===
+                                        "#fee2e2"
+                                        ? "#e5e7eb"
+                                        : preset.colors.freeCellBackgroundColor,
+                                    width: "16px",
+                                    height: "16px",
+                                    minWidth: "16px",
+                                    minHeight: "16px",
+                                  }}
+                                />
+                              </div>
+                              <span className="text-sm">{preset.name}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Font Size and Border Size Controls */}
+                      <div className="space-y-5">
+                        <div className="space-y-2">
+                          <label className="text-base font-semibold">
+                            Text size: {customization.cellFontSize.toFixed(1)}x
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="2.0"
+                              step="0.1"
+                              value={customization.cellFontSize}
+                              onChange={(e) =>
+                                setCustomization({
+                                  ...customization,
+                                  cellFontSize: parseFloat(e.target.value),
+                                })
+                              }
+                              className="flex-1 h-6 appearance-none cursor-pointer"
+                            />
+                            <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
+                              {customization.cellFontSize.toFixed(1)}x
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-base font-semibold">
+                            Border: {customization.cellBorderSize}px
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="1"
+                              max="8"
+                              step="1"
+                              value={customization.cellBorderSize}
+                              onChange={(e) =>
+                                setCustomization({
+                                  ...customization,
+                                  cellBorderSize: parseInt(e.target.value),
+                                })
+                              }
+                              className="flex-1 h-6 appearance-none cursor-pointer"
+                            />
+                            <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
+                              {customization.cellBorderSize}px
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Advanced Toggle */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        aria-expanded={showAdvanced}
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                      >
+                        <Palette className="mr-2 h-5 w-5" />
+                        {showAdvanced ? "Hide color options" : "More color options"}
+                      </Button>
+
+                      {/* Advanced Color Options */}
+                      {showAdvanced && (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                Cell Background
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.cellBackgroundColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cellBackgroundColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.cellBackgroundColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cellBackgroundColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#ffffff"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                Cell Text
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.cellTextColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cellTextColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.cellTextColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cellTextColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#111827"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                Cell Border
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.cellBorderColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cellBorderColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.cellBorderColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cellBorderColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#1f2937"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                FREE Background
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.freeCellBackgroundColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      freeCellBackgroundColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.freeCellBackgroundColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      freeCellBackgroundColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#fbbf24"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                FREE Text
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.freeCellTextColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      freeCellTextColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.freeCellTextColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      freeCellTextColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#ffffff"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                Title Color
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.titleColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      titleColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.titleColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      titleColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#111827"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                Footer Color
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={customization.footerColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      footerColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.footerColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      footerColor: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="#6b7280"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-base font-semibold">
+                                Card Background
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="color"
+                                  value={
+                                    customization.cardBackgroundColor ===
+                                    "transparent"
+                                      ? "#ffffff"
+                                      : customization.cardBackgroundColor
+                                  }
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cardBackgroundColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-12 w-16 rounded cursor-pointer"
+                                />
+                                <Input
+                                  value={customization.cardBackgroundColor}
+                                  onChange={(e) =>
+                                    setCustomization({
+                                      ...customization,
+                                      cardBackgroundColor:
+                                        e.target.value || "transparent",
+                                    })
+                                  }
+                                  className="flex-1"
+                                  placeholder="transparent"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setCustomization(presets.classic.colors);
+                              setShowAdvanced(false);
+                            }}
+                            className="w-full mt-4"
+                          >
+                            Back to Classic
+                          </Button>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                  </div>
+                </details>
+
+                <div className="mt-3 space-y-3">
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Your first name (shows on the link you send)"
+                    aria-label="Your first name (optional)"
+                    maxLength={24}
+                    autoComplete="given-name"
+                  />
+                  <Button
+                    onClick={handleSaveCard}
+                    className="w-full"
+                    size="lg"
+                    disabled={savingCard}
+                  >
+                    {savingCard ? (
+                      "Saving"
+                    ) : (
+                      <>
+                        <Share2 className="mr-2 h-5 w-5" />
+                        Save and share
+                      </>
+                    )}
+                  </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button onClick={handlePrint} variant="outline">
+                      <Printer className="mr-2 h-5 w-5" />
+                      Print
+                    </Button>
+                    <Button onClick={randomizeCard} variant="outline">
+                      <Shuffle className="mr-2 h-5 w-5" />
+                      Shuffle
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Want a picture? Print it and pick Save as PDF
+                  </p>
+                </div>
+              </section>
             </div>
           )}
 
+          {/* Got a code from a friend? */}
+          <section className="mx-auto max-w-2xl" aria-labelledby="open-heading">
+            <h2 id="open-heading" className="text-2xl font-bold text-primary">
+              Got a code from a friend?
+            </h2>
+            <div className="mt-5 flex gap-2">
+              <Input
+                placeholder="Card code"
+                aria-label="Card code"
+                value={loadCodeInput}
+                onChange={(e) => setLoadCodeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleLoadCard()}
+                className="flex-1 uppercase tracking-widest"
+                maxLength={6}
+              />
+              <Button
+                onClick={handleLoadCard}
+                disabled={loadingCard || loadCodeInput.length !== 6}
+              >
+                {loadingCard ? "Opening" : "Open"}
+              </Button>
+            </div>
+          </section>
+
+          {/* Questions */}
+          <section className="mx-auto max-w-2xl" aria-labelledby="questions-heading">
+            <h2 id="questions-heading" className="text-2xl font-bold text-primary">
+              Questions
+            </h2>
+            <div className="mt-3">
+              {[
+                ["Can I print it?", "Yep. Hit Print, then pick paper or Save as PDF"],
+                ["Who can see my card?", "Only people you send the link or code to. Search engines can\u2019t find it"],
+                ["How many do I need?", "24. The middle square is free"],
+                ["Can I change it after I send it?", "Not once it\u2019s saved. Open it, hit Edit as new, and you get a copy to change"],
+              ].map(([question, answer]) => (
+                <details key={question} className="group">
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-2 text-lg font-bold [&::-webkit-details-marker]:hidden">
+                    {question}
+                    <ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="pb-3">{answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+
           {/* Bingo Pool Signup Section */}
-          <BingoPoolSignup />
+          <section className="mx-auto max-w-2xl">
+            <BingoPoolSignup />
+          </section>
         </div>
       </div>
       {/* 18+ Age Gate Dialog */}
@@ -1749,46 +1712,23 @@ function HomeContent() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">
-              🔞 Age Verification Required
-            </DialogTitle>
-            <DialogDescription className="text-center pt-2">
-              This content is restricted to adults 18 years and older
+            <DialogTitle>Adults only</DialogTitle>
+            <DialogDescription>
+              The Spicy category has explicit sexual content
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-red-800 dark:text-red-200">
-                    Explicit Sexual Content Warning
-                  </p>
-                  <p className="text-xs text-red-700 dark:text-red-300">
-                    The Spicy theme contains explicit adult sexual content. By
-                    proceeding, you confirm that:
-                  </p>
-                  <ul className="text-xs text-red-700 dark:text-red-300 list-disc list-inside space-y-1 ml-2">
-                    <li>You are 18 years of age or older</li>
-                    <li>You consent to viewing explicit sexual content</li>
-                    <li>You understand this content is for adults only</li>
-                    <li>You will not share this content with minors</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-              <p className="text-xs text-orange-800 dark:text-orange-200 font-medium mb-1">
-                ⚠️ Legal Notice
-              </p>
-              <p className="text-xs text-orange-700 dark:text-orange-300">
-                All activities must be legal, consensual, and conducted in
-                private locations. This content does not encourage illegal
-                activity.
-              </p>
-            </div>
+          <div className="space-y-3 py-2">
+            <p className="font-semibold">By continuing you confirm that</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>You are 18 or older</li>
+              <li>You are fine with seeing explicit content</li>
+              <li>You will not share it with minors</li>
+            </ul>
+            <p className="text-muted-foreground">
+              Everything in it is meant to be legal, consensual and private
+            </p>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button
               variant="outline"
               onClick={() => {
@@ -1820,9 +1760,9 @@ function HomeContent() {
                   setWasSelectingAll(false);
                 }
               }}
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+              className="w-full sm:w-auto"
             >
-              I am 18+ and consent to view this content
+              I am 18 or older
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1832,85 +1772,56 @@ function HomeContent() {
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-              <Share2 className="h-6 w-6 text-green-600" />
-              Card Saved Successfully!
-            </DialogTitle>
-            <DialogDescription className="text-center pt-2">
-              Your bingo card has been saved and can be shared with anyone
+            <DialogTitle>Your card is saved</DialogTitle>
+            <DialogDescription>
+              Send the link to your friends, or give them the code
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg p-4">
-              <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                Your Card Code:
+          <div className="space-y-5 py-2">
+            <div>
+              <p className="font-semibold">Card code</p>
+              <p className="mt-1 text-3xl font-bold tracking-widest">
+                {savedCardCode?.toUpperCase()}
               </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white dark:bg-gray-800 border-2 border-green-300 dark:border-green-700 rounded-lg p-3 text-center">
-                  <span className="text-2xl font-bold font-mono text-green-700 dark:text-green-400">
-                    {savedCardCode?.toUpperCase()}
-                  </span>
-                </div>
-              </div>
             </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Shareable Link:
-              </p>
-              <div className="flex gap-2">
+            <div>
+              <p className="font-semibold">Link</p>
+              <div className="mt-1 flex gap-2">
                 <Input
                   readOnly
+                  aria-label="Shareable link"
                   value={
                     savedCardCode
                       ? `${window.location.origin}/card/${savedCardCode}`
                       : ""
                   }
-                  className="flex-1 font-mono text-sm"
+                  className="flex-1"
                 />
                 <Button
                   onClick={handleCopyLink}
                   variant="outline"
-                  className={cn(
-                    "transition-colors",
-                    copySuccess &&
-                      "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700"
-                  )}
+                  size="icon"
+                  aria-label={copySuccess ? "Link copied" : "Copy link"}
                 >
                   {copySuccess ? (
-                    <>
-                      <Check className="h-4 w-4 text-green-600" />
-                    </>
+                    <Check className="h-5 w-5" />
                   ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                    </>
+                    <Copy className="h-5 w-5" />
                   )}
                 </Button>
               </div>
               {copySuccess && (
-                <p className="text-xs text-green-600 dark:text-green-400 text-center">
-                  ✓ Link copied to clipboard!
+                <p className="mt-2 text-muted-foreground" aria-live="polite">
+                  Link copied
                 </p>
               )}
             </div>
-
-            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-xs text-blue-800 dark:text-blue-200 font-medium mb-1">
-                💡 What can you do with this?
-              </p>
-              <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <li>• Share the link with friends and family</li>
-                <li>• Anyone can view and print this exact card</li>
-                <li>
-                  • Others can click &quot;Edit as New&quot; to create their own
-                  version
-                </li>
-                <li>• Your original card will never change</li>
-              </ul>
-            </div>
+            <p className="text-muted-foreground">
+              Anyone with the link can see and print it. Your original never
+              changes
+            </p>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button
               variant="outline"
               onClick={() => setShowShareDialog(false)}
@@ -1923,17 +1834,17 @@ function HomeContent() {
                 onClick={() => {
                   window.open(`/card/${savedCardCode}`, "_blank");
                 }}
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                className="w-full sm:w-auto"
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Card
+                <ExternalLink className="mr-2 h-5 w-5" />
+                View card
               </Button>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Footer textColor="#6b7280" iconColor="#bf8104" />
+      <Footer />
     </div>
   );
 }
@@ -1942,11 +1853,8 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-          </div>
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <p className="text-muted-foreground">Loading</p>
         </div>
       }
     >

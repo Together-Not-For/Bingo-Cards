@@ -24,39 +24,47 @@ export function BingoCard({ items, customization }: BingoCardProps) {
   // Default customization values
   const defaults: BingoCardCustomization = {
     cellBackgroundColor: "#ffffff",
-    cellTextColor: "#111827",
-    cellBorderColor: "#1f2937",
-    freeCellBackgroundColor: "#fbbf24",
-    freeCellTextColor: "#ffffff",
-    titleColor: "#111827",
-    footerColor: "#6b7280",
-    cardBackgroundColor: "transparent",
+    cellTextColor: "#24382c",
+    cellBorderColor: "#24382c",
+    freeCellBackgroundColor: "#ae5128",
+    freeCellTextColor: "#fffbf5",
+    titleColor: "#24382c",
+    footerColor: "#24382c",
+    cardBackgroundColor: "#ffffff",
     cellFontSize: 1.0,
     cellBorderSize: 3,
   };
 
   const custom = { ...defaults, ...customization };
 
-  // Calculate font size based on text length and user's font size multiplier
-  const getFontSize = (text: string, isMobile: boolean = false) => {
+  // Text scales with the grid's own width (cqw), so cells stay readable at
+  // phone widths instead of shrinking to a fixed rem size
+  const getFontSize = (text: string) => {
     const baseSize = custom.cellFontSize || 1.0;
     const length = text.length;
-    let baseFontSize = 0.6; // Base size in rem
+    let widthPercent = 3.4;
 
-    if (length <= 20) baseFontSize = 0.6;
-    else if (length <= 35) baseFontSize = 0.55;
-    else if (length <= 50) baseFontSize = 0.5;
-    else baseFontSize = 0.45;
+    if (length <= 20) widthPercent = 3.4;
+    else if (length <= 35) widthPercent = 2.8;
+    else if (length <= 50) widthPercent = 2.6;
+    else widthPercent = 2.3;
 
-    const adjustedSize = baseFontSize * baseSize;
-    // Mobile is 75% of desktop size
-    return isMobile ? `${adjustedSize * 0.75}rem` : `${adjustedSize}rem`;
+    // Keep the longest word inside the cell width
+    const longestWord = Math.max(...text.split(/[\s/]+/).map((w) => w.length), 1);
+    widthPercent = Math.max(Math.min(widthPercent, 30 / longestWord), 2.3);
+
+    return `${(widthPercent * baseSize).toFixed(2)}cqw`;
   };
 
   return (
     <div
       className="print-card"
-      style={{ backgroundColor: custom.cardBackgroundColor }}
+      style={{
+        backgroundColor:
+          custom.cardBackgroundColor === "transparent"
+            ? "#ffffff"
+            : custom.cardBackgroundColor,
+      }}
     >
       <div className="mb-4 text-center">
         <h2
@@ -70,7 +78,10 @@ export function BingoCard({ items, customization }: BingoCardProps) {
           2026 BINGO
         </h2>
       </div>
-      <div className="grid grid-cols-5 gap-1.5 sm:gap-2 max-w-md mx-auto px-4">
+      <div
+        className="grid grid-cols-5 gap-1 sm:gap-2 max-w-md mx-auto"
+        style={{ containerType: "inline-size" }}
+      >
         {items.map((item, index) => {
           const borderSize = custom.cellBorderSize || 3;
           return (
@@ -80,7 +91,7 @@ export function BingoCard({ items, customization }: BingoCardProps) {
                 "aspect-square rounded-md sm:rounded-lg",
                 "flex items-center justify-center text-center font-medium transition-all",
                 "overflow-hidden",
-                index === 12 ? "shadow-lg p-0" : "p-1.5 sm:p-2"
+                index === 12 ? "p-0" : "p-0.5 sm:p-2"
               )}
               style={{
                 backgroundColor:
@@ -94,9 +105,10 @@ export function BingoCard({ items, customization }: BingoCardProps) {
             >
               {index === 12 ? (
                 <span
-                  className="font-bold w-full h-full flex items-center justify-center text-[1rem] sm:text-[1.25rem]"
+                  className="font-bold w-full h-full flex items-center justify-center"
                   style={{
                     color: custom.freeCellTextColor,
+                    fontSize: "4.5cqw",
                     whiteSpace: "nowrap",
                     lineHeight: "1",
                   }}
@@ -111,15 +123,14 @@ export function BingoCard({ items, customization }: BingoCardProps) {
                   )}
                   style={{
                     color: custom.cellTextColor,
-                    fontSize: getFontSize(item, false),
-                    wordBreak: "normal",
-                    overflowWrap: "normal",
-                    hyphens: "none",
+                    fontSize: getFontSize(item),
+                    overflowWrap: "break-word",
+                    hyphens: "auto",
                     lineHeight: "1.2",
                     textAlign: "center",
                   }}
                 >
-                  {item}
+                  {item.replace(/\//g, "/\u200b")}
                 </span>
               )}
             </div>

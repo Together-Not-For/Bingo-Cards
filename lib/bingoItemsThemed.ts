@@ -105,7 +105,6 @@ export const THEMED_ITEMS: Record<Theme, string[]> = {
     "Tried a mocktail night instead of drinking",
     "Went on a date night (planned)",
     "Went on a date night (spontaneous)",
-    "Initiated intimacy you actually wanted",
     'Bought yourself flowers / a small treat "just because"',
     "Had a meaningful talk without distractions",
     'Made a "joy list" and did one thing from it',
@@ -380,6 +379,7 @@ export const THEMED_ITEMS: Record<Theme, string[]> = {
     "Embrace uncertainty with courage",
   ],
   spicy: [
+    "Initiated intimacy you actually wanted",
     "Tried a new sex position",
     "Had sex in a new location at home",
     "Had shower sex",

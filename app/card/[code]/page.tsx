@@ -4,12 +4,13 @@ import { BingoCard, BingoCardCustomization } from "@/components/BingoCard";
 import Footer from "@/components/common/Footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   trackCardLoaded,
   trackCardPrinted,
   trackEditAsNew,
 } from "@/lib/analytics";
+import { cardTitle, cleanFirstName } from "@/lib/cardTitle";
+import { escapePrintText, safePrintCustomization } from "@/lib/printSafety";
 import { ArrowLeft, Edit, Printer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -71,22 +72,10 @@ export default function SharedCardPage({
 
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      const customization = {
-        cellBackgroundColor: "#ffffff",
-        cellTextColor: "#111827",
-        cellBorderColor: "#1f2937",
-        freeCellBackgroundColor: "#fbbf24",
-        freeCellTextColor: "#ffffff",
-        titleColor: "#111827",
-        footerColor: "#6b7280",
-        cardBackgroundColor: "transparent",
-        cellFontSize: 1.0,
-        cellBorderSize: 3,
-        ...(cardData.customization || {}),
-      };
+      const printCustomization = safePrintCustomization(cardData.customization || {});
 
       const getFontSize = (text: string) => {
-        const fontSizeMultiplier = customization.cellFontSize || 1.0;
+        const fontSizeMultiplier = printCustomization.cellFontSize || 1.0;
         const length = text.length;
         let baseSize = 1.0;
 
@@ -103,7 +92,7 @@ export default function SharedCardPage({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>2026 Bingo Card - ${cardData.code}</title>
+            <title>2026 Bingo Card - ${escapePrintText(cardData.code)}</title>
             <style>
               * {
                 margin: 0;
@@ -120,9 +109,9 @@ export default function SharedCardPage({
                 min-height: 100vh;
                 padding: 10mm;
                 background: ${
-                  customization.cardBackgroundColor === "transparent"
+                  printCustomization.cardBackgroundColor === "transparent"
                     ? "white"
-                    : customization.cardBackgroundColor
+                    : printCustomization.cardBackgroundColor
                 };
               }
               .bingo-container {
@@ -136,7 +125,7 @@ export default function SharedCardPage({
                 font-size: 2.5rem;
                 font-weight: bold;
                 margin-bottom: 16px;
-                color: ${customization.titleColor};
+                color: ${printCustomization.titleColor};
                 letter-spacing: 0.15em;
                 font-family: Georgia, "Times New Roman", serif;
               }
@@ -153,12 +142,12 @@ export default function SharedCardPage({
                 height: 0;
                 padding-bottom: 100%;
                 position: relative;
-                border: ${customization.cellBorderSize || 3}px solid ${
-        customization.cellBorderColor
+                border: ${printCustomization.cellBorderSize || 3}px solid ${
+        printCustomization.cellBorderColor
       };
                 border-radius: 8px;
-                background: ${customization.cellBackgroundColor} !important;
-                color: ${customization.cellTextColor} !important;
+                background: ${printCustomization.cellBackgroundColor} !important;
+                color: ${printCustomization.cellTextColor} !important;
                 page-break-inside: avoid;
                 break-inside: avoid;
               }
@@ -176,15 +165,14 @@ export default function SharedCardPage({
                 font-weight: 500;
                 overflow: hidden;
                 line-height: 1.3;
-                word-break: normal;
-                overflow-wrap: normal;
-                hyphens: none;
+                overflow-wrap: break-word;
+                hyphens: auto;
               }
               .bingo-cell.free {
-                background: ${customization.freeCellBackgroundColor} !important;
+                background: ${printCustomization.freeCellBackgroundColor} !important;
               }
               .bingo-cell.free > span {
-                color: ${customization.freeCellTextColor} !important;
+                color: ${printCustomization.freeCellTextColor} !important;
                 font-size: 2rem;
                 font-weight: bold;
                 padding: 0;
@@ -197,13 +185,13 @@ export default function SharedCardPage({
               }
               .bingo-footer {
                 text-align: center;
-                color: ${customization.footerColor};
+                color: ${printCustomization.footerColor};
                 font-size: 0.875rem;
                 margin-top: 16px;
               }
               .bingo-code {
                 text-align: center;
-                color: ${customization.footerColor};
+                color: ${printCustomization.footerColor};
                 font-size: 0.75rem;
                 margin-top: 8px;
                 font-family: monospace;
@@ -237,18 +225,28 @@ export default function SharedCardPage({
                       }"><span style="${
                         index !== 12
                           ? `font-size: ${getFontSize(item)}; color: ${
-                              customization.cellTextColor
+                              printCustomization.cellTextColor
                             };`
                           : ""
-                      }">${item}</span></div>`
+                      }">${escapePrintText(item).replace(/\//g, "/&#8203;")}</span></div>`
                   )
                   .join("")}
               </div>
               <div class="bingo-footer">Generated by Together, Not For</div>
-              <div class="bingo-code">Code: ${cardData.code}</div>
+              <div class="bingo-code">Code: ${escapePrintText(cardData.code)}</div>
             </div>
             <script>
+              function fitCells() {
+                document.querySelectorAll(".bingo-cell > span").forEach(function(cell) {
+                  var size = parseFloat(getComputedStyle(cell).fontSize);
+                  while (cell.scrollHeight > cell.clientHeight && size > 5) {
+                    size -= 0.5;
+                    cell.style.fontSize = size + "px";
+                  }
+                });
+              }
               window.onload = function() {
+                fitCells();
                 setTimeout(function() {
                   window.print();
                 }, 250);
@@ -278,137 +276,104 @@ export default function SharedCardPage({
     );
   };
 
+  const header = (
+    <header className="flex items-center justify-between">
+      <Link href="/">
+        <Button variant="ghost" size="sm" className="-ml-4">
+          <ArrowLeft className="mr-2 h-5 w-5" />
+          Make yours
+        </Button>
+      </Link>
+      <ThemeToggle />
+    </header>
+  );
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-end mb-4">
-            <ThemeToggle />
-          </div>
-          <div className="max-w-2xl mx-auto text-center py-20">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-48 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-64 mx-auto"></div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="mx-auto w-full max-w-2xl px-4 pt-4 sm:px-6">
+          {header}
+          <p className="py-20 text-center text-muted-foreground" role="status">
+            Opening card
+          </p>
         </div>
-        <Footer textColor="#6b7280" iconColor="#bf8104" />
+        <Footer />
       </div>
     );
   }
 
   if (error || !cardData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-end mb-4">
-            <ThemeToggle />
-          </div>
-          <div className="max-w-2xl mx-auto">
-            <Card className="shadow-lg border-2 border-red-200 dark:border-red-800">
-              <CardHeader>
-                <CardTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
-                  Card Not Found
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-700 dark:text-gray-300">
-                  {error || "This bingo card could not be found."}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  The code <span className="font-mono font-bold">{params.code.toUpperCase()}</span> may be invalid or the card may have been removed.
-                </p>
-                <Link href="/">
-                  <Button className="w-full">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Go to Home
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="mx-auto w-full max-w-2xl px-4 pt-4 sm:px-6">
+          {header}
+          <section className="mt-6">
+            <h1 className="text-4xl font-bold leading-tight text-primary">
+              We couldn&apos;t find that card
+            </h1>
+            <p className="mt-4 text-lg">
+              {error ||
+                `The code ${params.code.toUpperCase()} may have a typo, or the card may have been removed`}
+            </p>
+            <Link href="/">
+              <Button className="mt-6 w-full sm:w-auto" size="lg">
+                Make a new card
+              </Button>
+            </Link>
+          </section>
         </div>
-        <Footer textColor="#6b7280" iconColor="#bf8104" />
+        <Footer />
       </div>
     );
   }
 
+  const firstName = cleanFirstName(
+    (cardData.customization as { firstName?: unknown } | undefined)?.firstName
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
-          <ThemeToggle />
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto w-full max-w-2xl px-4 pt-4 sm:px-6">
+        {header}
+
+        <section className="mt-4">
+          <h1 className="text-4xl font-bold leading-tight text-primary sm:text-5xl">
+            {cardTitle(firstName)}
+          </h1>
+          <p className="mt-3 text-lg text-muted-foreground">
+            Card code {cardData.code.toUpperCase()}
+          </p>
+        </section>
+
+        <div className="mt-6 w-full overflow-hidden bg-white">
+          <div className="mx-auto w-full max-w-md p-2 sm:p-4">
+            <BingoCard
+              items={cardData.items}
+              customization={cardData.customization}
+            />
+          </div>
         </div>
 
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Shared Bingo Card
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Code:{" "}
-              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
-                {cardData.code.toUpperCase()}
-              </span>
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Created on {new Date(cardData.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-
-          <Card className="shadow-lg mb-6">
-            <CardHeader>
-              <CardTitle className="text-2xl text-center">
-                Your Bingo Card
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-inner">
-                <BingoCard
-                  items={cardData.items}
-                  customization={cardData.customization}
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                <Button
-                  onClick={handlePrint}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Card
-                </Button>
-                <Button
-                  onClick={handleEditAsNew}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit as New
-                </Button>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-4">
-                <p className="text-xs text-blue-800 dark:text-blue-200 font-medium mb-1">
-                  💡 Share this card:
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Anyone with this link can view this bingo card. Click &quot;Edit as
-                  New&quot; to create your own version.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="mt-6 space-y-3">
+          <Button onClick={handleEditAsNew} className="w-full" size="lg">
+            <Edit className="mr-2 h-5 w-5" />
+            Edit as new
+          </Button>
+          <Button
+            onClick={handlePrint}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            <Printer className="mr-2 h-5 w-5" />
+            Print
+          </Button>
+          <p className="text-muted-foreground">
+            Want to change it? Edit as new makes a copy and leaves this one alone
+          </p>
         </div>
       </div>
-      <Footer textColor="#6b7280" iconColor="#bf8104" />
+      <Footer />
     </div>
   );
 }
-
