@@ -9,6 +9,6 @@ export const contentType = "image/png";
 export default async function Image({ params }: { params: { code: string } }) {
   return renderOgImage({
     headline: cardTitle(await getCardFirstName(params.code)),
-    subline: "Open the card to see the goals",
+    subline: `Share code: ${params.code}`,
   });
 }
