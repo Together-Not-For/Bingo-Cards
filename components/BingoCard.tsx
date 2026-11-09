@@ -12,6 +12,7 @@ export interface BingoCardCustomization {
   footerColor: string;
   cardBackgroundColor: string;
   cellFontSize: number; // Font size multiplier (0.5 to 2.0)
+  cellCornerRadius?: number;
   cellBorderSize: number; // Border size in pixels (1 to 8)
   // Optional second tile color: every other square, like a patchwork quilt
   alternateColors?: boolean;
@@ -111,7 +112,7 @@ export function BingoCard({
             <div
               key={index}
               className={cn(
-                "aspect-square rounded-sm",
+                "aspect-square",
                 "flex items-center justify-center text-center font-medium transition-all",
                 "overflow-hidden",
                 index === 12 ? "p-0" : "p-0.5 sm:p-2"
@@ -121,6 +122,7 @@ export function BingoCard({
                 borderColor: custom.cellBorderColor,
                 borderWidth: `${borderSize}px`,
                 borderStyle: "solid",
+                borderRadius: `${custom.cellCornerRadius ?? 2}px`,
               }}
             >
               {isFree ? (

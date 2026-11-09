@@ -767,7 +767,7 @@ function HomeContent() {
                 border: ${printCustomization.cellBorderSize || 3}px solid ${
         printCustomization.cellBorderColor
       };
-                border-radius: 4px;
+                border-radius: ${printCustomization.cellCornerRadius ?? 2}px;
                 background: ${printCustomization.cellBackgroundColor} !important;
                 color: ${printCustomization.cellTextColor} !important;
                 page-break-inside: avoid;
@@ -1317,9 +1317,9 @@ function HomeContent() {
                               onClick={() => {
                                 if (key === "random") {
                                   // Generate new random colors each time
-                                  setCustomization({ ...generateRandomPreset(), alternateColors: customization.alternateColors });
+                                  setCustomization({ ...generateRandomPreset(), alternateColors: customization.alternateColors, cellCornerRadius: customization.cellCornerRadius });
                                 } else {
-                                  setCustomization({ ...preset.colors, alternateColors: customization.alternateColors });
+                                  setCustomization({ ...preset.colors, alternateColors: customization.alternateColors, cellCornerRadius: customization.cellCornerRadius });
                                 }
                               }}
                               aria-pressed={key !== "random" && customization.cellBackgroundColor === preset.colors.cellBackgroundColor && customization.freeCellBackgroundColor === preset.colors.freeCellBackgroundColor}
@@ -1440,6 +1440,14 @@ function HomeContent() {
                         </div>
                       </div>
 
+                      <div className="space-y-2">
+                        <label htmlFor="corner-radius" className="text-base font-semibold">Corner radius: {customization.cellCornerRadius ?? 2}px</label>
+                        <div className="flex items-center gap-2">
+                          <input id="corner-radius" type="range" min="0" max="24" step="1" value={customization.cellCornerRadius ?? 2} onChange={(e) => setCustomization({ ...customization, cellCornerRadius: Number(e.target.value) })} className="flex-1 h-6 cursor-pointer accent-primary" />
+                          <span className="text-sm text-muted-foreground min-w-[3rem] text-right">{customization.cellCornerRadius ?? 2}px</span>
+                        </div>
+                      </div>
+
                       {/* Advanced Toggle */}
                       <Button
                         type="button"
@@ -1455,7 +1463,7 @@ function HomeContent() {
                       {/* Advanced Color Options */}
                       {showAdvanced && (
                         <>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                               <label className="text-base font-semibold">
                                 Cell Background
@@ -1729,10 +1737,14 @@ function HomeContent() {
                 </details>
 
                 <div className="mt-3 space-y-3">
+                  <label htmlFor="card-first-name" className="block text-sm font-semibold">First name (optional)</label>
+                  <p id="card-first-name-hint" className="text-sm text-muted-foreground">Your name will appear on the card and the link you share.</p>
                   <Input
+                    id="card-first-name"
+                    aria-describedby="card-first-name-hint"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Your first name (shows on the link you send)"
+                    placeholder="Your first name"
                     aria-label="Your first name (optional)"
                     maxLength={24}
                     autoComplete="given-name"

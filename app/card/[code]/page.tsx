@@ -152,7 +152,7 @@ export default function SharedCardPage({
                 border: ${printCustomization.cellBorderSize || 3}px solid ${
         printCustomization.cellBorderColor
       };
-                border-radius: 4px;
+                border-radius: ${printCustomization.cellCornerRadius ?? 2}px;
                 background: ${printCustomization.cellBackgroundColor} !important;
                 color: ${printCustomization.cellTextColor} !important;
                 page-break-inside: avoid;

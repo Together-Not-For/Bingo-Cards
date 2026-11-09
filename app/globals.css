@@ -25,7 +25,7 @@
     --input: 315 40% 96%;
     --ring: 311 29% 23%;
     --placeholder: 317 15% 38%;
-    --radius: 0.25rem;
+    --radius: 1rem;
   }
 
   .dark {
@@ -88,7 +88,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: hsl(var(--accent));
   height: 24px;
   width: 24px;
-  border-radius: 0;
+  border-radius: 9999px;
   margin-top: -10px;
 }
 
@@ -101,7 +101,7 @@ input[type="range"]::-moz-range-thumb {
   background: hsl(var(--accent));
   height: 24px;
   width: 24px;
-  border-radius: 0;
+  border-radius: 9999px;
   border: none;
   cursor: pointer;
 }
