@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { NextRequest, NextResponse } from "next/server";
+import { cleanFirstName } from "@/lib/cardTitle";
 
 // Characters to use in the short code (excluding ambiguous ones like 0, O, 1, I, L)
 const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -16,7 +17,11 @@ function generateCode(): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, customization } = body;
+    const { items, customization: rawCustomization } = body;
+    const firstName = cleanFirstName(body.firstName);
+    // The name only comes from its own field, never from the style data
+    const { firstName: _ignored, ...style } = rawCustomization ?? {};
+    const customization = firstName ? { ...style, firstName } : style;
 
     // Validate input
     if (!items || !Array.isArray(items) || items.length !== 25) {

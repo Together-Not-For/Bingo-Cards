@@ -1,16 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Loader2, Users } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 export function BingoPoolSignup() {
@@ -63,79 +56,70 @@ export function BingoPoolSignup() {
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          <CardTitle className="text-2xl">Join Our Bingo Pool</CardTitle>
+    <div>
+      <h2 className="text-2xl font-bold text-primary">Join the bingo pool</h2>
+      <p className="mt-3 text-lg">
+        Add your name and number and we&apos;ll text you about the prizes for
+        getting bingo and for filling the whole board. We only use your number
+        for that
+      </p>
+      <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            autoComplete="given-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            disabled={isSubmitting}
+          />
         </div>
-        <CardDescription>
-          Enter your name and phone number below to join. We&apos;ll confirm the
-          prizes for getting bingo and for completing the full board.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={isSubmitting}
-              className="w-full"
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="(555) 123-4567"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-              disabled={isSubmitting}
-              className="w-full"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone number</Label>
+          <Input
+            id="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="(555) 123-4567"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
 
-          {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-            </div>
+        {error && (
+          <p className="font-semibold text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+
+        {isSuccess && (
+          <p className="flex items-center gap-2 font-semibold" role="status">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            You&apos;re in the pool
+          </p>
+        )}
+
+        <Button
+          type="submit"
+          disabled={isSubmitting || !name.trim() || !phoneNumber.trim()}
+          className="w-full"
+          size="lg"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Joining
+            </>
+          ) : (
+            "Join the pool"
           )}
-
-          {isSuccess && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <p className="text-sm text-green-800 dark:text-green-200">
-                Successfully signed up for the bingo pool!
-              </p>
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            disabled={isSubmitting || !name.trim() || !phoneNumber.trim()}
-            className="w-full"
-            size="lg"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Signing up...
-              </>
-            ) : (
-              "Join Bingo Pool"
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </Button>
+      </form>
+    </div>
   );
 }
