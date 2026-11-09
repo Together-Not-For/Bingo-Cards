@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Together, Not For Bingo",
+  title: "2026 bingo creator",
   description:
     "Pick 24 things you want to do in 2026, make a bingo card, and send it to your friends",
   keywords: [
@@ -30,17 +30,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Together, Not For Bingo",
+    title: "2026 bingo creator",
     description:
       "Pick 24 things you want to do in 2026, make a bingo card, and send it to your friends",
     type: "website",
     url: "/",
-    siteName: "Together, Not For Bingo",
+    siteName: "2026 bingo creator",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Together, Not For Bingo",
+    title: "2026 bingo creator",
     description:
       "Pick 24 things you want to do in 2026, make a bingo card, and send it to your friends",
   },
